@@ -1,0 +1,92 @@
+body {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Prevent unnecessary scrolling */
+}
+
+h1 {
+    font-size: 24px;
+    text-align: center;
+    margin: 20px 0;
+    color: #333;
+}
+
+#left-panel {
+    width: auto;
+    max-width: 40%;
+    border-right: 1px solid #ccc;
+    padding: 10px;
+    overflow-y: auto;
+    height: 100%; /* Occupy full height of the viewport */
+    box-sizing: border-box; /* Include padding in height calculation */
+}
+
+#right-panel {
+    flex-grow: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden; /* Ensure the player fits within the panel */
+}
+
+#player {
+    width: 100%;
+    height: auto;
+    min-height: 315px; /* Ensure player has a visible height */
+}
+
+table {
+    width: auto;
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: auto;
+}
+
+table th, table td {
+    border: 1px solid #ddd;
+    padding: 4px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+table th {
+    background-color: #f4f4f4;
+}
+
+table tr:hover {
+    background-color: #f1f1f1;
+    cursor: pointer;
+}
+
+#notes-section {
+    font-size: 12px;
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    display: none;
+}
+
+.playlist-links {
+    margin: 10px 0;
+}
+
+.playlist-links div {
+    margin: 5px 0; /* Add space between playlist links */
+}
+
+.playlist-links a {
+    text-decoration: none; /* Remove underline */
+    color: #333; /* Neutral text color */
+    font-size: 14px; /* Adjust font size */
+    display: block; /* Ensure each link occupies its own line */
+}
+
+.playlist-links a:hover {
+    color: #007BFF; /* Change color on hover for emphasis */
+    text-decoration: underline; /* Optional underline on hover */
+}

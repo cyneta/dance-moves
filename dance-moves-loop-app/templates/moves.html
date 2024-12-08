@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ playlist_name.replace('_', ' ').title() }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh; /* Full viewport height */
+        }
+        #left-panel {
+            width: auto;
+            max-width: 40%;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        #right-panel {
+            flex-grow: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 0;
+            overflow: hidden; /* Ensure the player fits within the panel */
+        }
+        #player {
+            width: 100%;
+            height: 100%;
+            min-height: 315px; /* Ensure player has a visible height */
+        }
+        table {
+            width: auto;
+            border-collapse: collapse;
+            font-size: 12px;
+            table-layout: auto;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        table th {
+            background-color: #f4f4f4;
+        }
+        table tr:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+        #notes-section {
+            font-size: 12px;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            display: none;
+        }
+    </style>
+    <script>
+        let player;
+        let startTime = 0;
+        let endTime = null;
+
+        function onYouTubeIframeAPIReady() {
+            initializePlayer();
+        }
+
+        function initializePlayer() {
+            if (!player) {
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: '', // Default video ID
+                    playerVars: { autoplay: 0, controls: 1 },
+                    events: { onStateChange: onPlayerStateChange },
+                });
+            }
+        }
+
+        function loadVideo(videoId, start, end, notes) {
+            startTime = start || 0;
+            endTime = end || null;
+
+            if (player) {
+                player.loadVideoById({
+                    videoId: videoId,
+                    startSeconds: startTime,
+                    endSeconds: endTime || undefined,
+                });
+            } else {
+                initializePlayer();
+                player.loadVideoById({
+                    videoId: videoId,
+                    startSeconds: startTime,
+                    endSeconds: endTime || undefined,
+                });
+            }
+
+            displayNotes(notes);
+        }
+
+        function playGuide(videoId, notes) {
+            if (player) {
+                player.loadVideoById({ videoId: videoId, startSeconds: 0 });
+            } else {
+                initializePlayer();
+                player.loadVideoById({ videoId: videoId, startSeconds: 0 });
+            }
+
+            displayNotes(notes);
+        }
+
+        function displayNotes(notes) {
+            const notesSection = document.getElementById('notes-section');
+            const notesContent = document.getElementById('notes-content');
+
+            if (notes) {
+                notesContent.innerHTML = notes.replace(/  /g, '<br>');
+                notesSection.style.display = 'block';
+            } else {
+                notesSection.style.display = 'none';
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                player.seekTo(startTime);
+            }
+        }
+
+        // Ensure the player is reinitialized when switching pages
+        document.addEventListener("DOMContentLoaded", () => {
+            initializePlayer();
+        });
+    </script>
+</head>
+<body>
+    <div id="left-panel">
+        <h2>Dance Playlists</h2>
+        <div class="playlist-links">
+            {% for playlist, display_name in playlists %}
+            <div>
+                <a href="/playlist/{{ playlist }}"
+                   {% if playlist == playlist_name %}style="font-weight: bold;"{% endif %}>
+                   {{ display_name }}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Move</th>
+                    <th>Level</th>
+                    <th>Guide</th>
+                    <th>Loop</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for move in moves %}
+                <tr>
+                    <td>{{ move['move_name'] }}</td>
+                    <td>{{ move['level'] }}</td>
+                    <td>
+                        <button onclick="playGuide('{{ move['video_id'] }}', '{{ move['notes'] | escape }}')">Guide</button>
+                    </td>
+                    <td>
+                        <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['start_time'] or 0 }}, {{ move['end_time'] if move['end_time'] else 'null' }}, '{{ move['notes'] | escape }}')">Loop</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div id="notes-section">
+            <h3>Notes</h3>
+            <p id="notes-content"></p>
+        </div>
+    </div>
+
+    <div id="right-panel">
+        <div id="player"></div>
+    </div>
+</body>
+</html>

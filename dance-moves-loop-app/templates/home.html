@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dance Playlists</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Dance Playlists</h1>
+    <div class="playlist-links">
+        {% for col, display_name in playlists %}
+        <div>
+            <a href="/playlist/{{ col }}"
+               {% if col == first_playlist %}style="font-weight: bold;"{% endif %}>
+               {{ display_name }}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
