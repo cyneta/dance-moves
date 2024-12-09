@@ -1,0 +1,16 @@
+blinker @ file:///home/conda/feedstock_root/build_artifacts/blinker_1731096409132/work
+click @ file:///D:/bld/click_1733221870611/work
+colorama @ file:///home/conda/feedstock_root/build_artifacts/colorama_1733218098505/work
+Flask @ file:///home/conda/feedstock_root/build_artifacts/flask_1731556349671/work
+importlib_metadata @ file:///home/conda/feedstock_root/build_artifacts/importlib-metadata_1733223117029/work
+itsdangerous @ file:///home/conda/feedstock_root/build_artifacts/itsdangerous_1733308265247/work
+Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/jinja2_1733217336947/work
+MarkupSafe @ file:///D:/bld/markupsafe_1733219614059/work
+numpy @ file:///D:/bld/numpy_1732314323952/work/dist/numpy-2.0.2-cp311-cp311-win_amd64.whl#sha256=256c08f2badfbb3090cf87d2a238847df5e794797acf8346288c8ee02f558811
+pandas @ file:///D:/bld/pandas_1726878554493/work
+python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1733215673016/work
+pytz @ file:///home/conda/feedstock_root/build_artifacts/pytz_1706886791323/work
+six @ file:///home/conda/feedstock_root/build_artifacts/six_1733380938961/work
+tzdata @ file:///home/conda/feedstock_root/build_artifacts/python-tzdata_1733235305708/work
+Werkzeug @ file:///home/conda/feedstock_root/build_artifacts/werkzeug_1733160440960/work
+zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1732827521216/work
