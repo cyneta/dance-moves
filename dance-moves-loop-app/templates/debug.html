@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug YouTube Player</title>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 14px;
+        }
+        #player {
+            width: 640px;
+            height: 360px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+    </style>
+    <script>
+        let player;
+
+        console.log("Test log: The page has loaded."); // Test HTML and JS loading
+
+        // Debug the YouTube API loading
+        function onYouTubeIframeAPIReady() {
+            console.log("YouTube Iframe API is ready!"); // Test if API loads
+            initializePlayer();
+        }
+
+        function initializePlayer() {
+            console.log("Initializing YouTube player...");
+            player = new YT.Player('player', {
+                height: '360',
+                width: '640',
+                videoId: '', // Default video ID
+                playerVars: { autoplay: 0, controls: 1 },
+                events: {
+                    onReady: () => console.log("Player ready!"),
+                    onStateChange: event => console.log("Player state changed!", event.data)
+                }
+            });
+        }
+
+        function playGuide(videoId, notes) {
+            console.log("playGuide function clicked!"); // Debug button click
+            alert(`Guide Button Clicked! Video ID: ${videoId}, Notes: ${notes}`);
+            if (player) {
+                player.loadVideoById({
+                    videoId: videoId,
+                    startSeconds: 0,
+                });
+                player.setPlaybackRate(1); // Normal speed for Guide
+            }
+        }
+
+        function playLoop(videoId, start, end, speed, notes) {
+            console.log("playLoop function clicked!"); // Debug button click
+            alert(`Loop Button Clicked! Video ID: ${videoId}, Start: ${start}, End: ${end}, Speed: ${speed}, Notes: ${notes}`);
+            if (player) {
+                player.loadVideoById({
+                    videoId: videoId,
+                    startSeconds: start,
+                    endSeconds: end || undefined,
+                });
+                player.setPlaybackRate(speed || 1); // Set playback speed for Loop
+            }
+        }
+
+        // Manual testing functions
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("Manual testing setup.");
+            const testGuide = document.getElementById("test-guide");
+            const testLoop = document.getElementById("test-loop");
+
+            // Attach manual test listeners
+            testGuide.addEventListener("click", () => playGuide('M7lc1UVf-VE', 'Debugging Guide Button'));
+            testLoop.addEventListener("click", () => playLoop('M7lc1UVf-VE', 10, 20, 0.5, 'Debugging Loop Button'));
+        });
+    </script>
+</head>
+<body>
+    <h1>Debug YouTube Player</h1>
+
+    <!-- Buttons for testing -->
+    <button id="test-guide">Test Guide</button>
+    <button id="test-loop">Test Loop</button>
+
+    <div id="player"></div>
+</body>
+</html>

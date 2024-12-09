@@ -7,152 +7,79 @@
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
+        /* Flexbox layout for horizontal alignment */
         body {
             display: flex;
             flex-direction: row;
             margin: 0;
             font-family: Arial, sans-serif;
             height: 100vh; /* Full viewport height */
+            overflow: hidden; /* Avoid unnecessary scrollbars */
         }
+
         #left-panel {
-            width: auto;
-            max-width: 40%;
-            border-right: 1px solid #ccc;
+            flex: 1; /* Allow it to take up available space */
             padding: 10px;
-            overflow-y: auto;
+            overflow-y: auto; /* Enable vertical scrolling for long content */
         }
+
         #right-panel {
-            flex-grow: 1;
+            flex: 2; /* Take up more space than the left panel */
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
-            padding: 0;
-            overflow: hidden; /* Ensure the player fits within the panel */
+            padding: 10px;
         }
+
         #player {
             width: 100%;
             height: 100%;
-            min-height: 315px; /* Ensure player has a visible height */
         }
+
         table {
-            width: auto;
+            width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 14px;
             table-layout: auto;
         }
+
         table th, table td {
             border: 1px solid #ddd;
             padding: 4px;
             text-align: left;
             white-space: nowrap;
         }
+
         table th {
             background-color: #f4f4f4;
         }
+
         table tr:hover {
             background-color: #f1f1f1;
             cursor: pointer;
         }
+
         #notes-section {
-            font-size: 12px;
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ccc;
             background-color: #f9f9f9;
-            display: none;
         }
     </style>
-    <script>
-        let player;
-        let startTime = 0;
-        let endTime = null;
-
-        function onYouTubeIframeAPIReady() {
-            initializePlayer();
-        }
-
-        function initializePlayer() {
-            if (!player) {
-                player = new YT.Player('player', {
-                    height: '100%',
-                    width: '100%',
-                    videoId: '', // Default video ID
-                    playerVars: { autoplay: 0, controls: 1 },
-                    events: { onStateChange: onPlayerStateChange },
-                });
-            }
-        }
-
-        function loadVideo(videoId, start, end, notes) {
-            startTime = start || 0;
-            endTime = end || null;
-
-            if (player) {
-                player.loadVideoById({
-                    videoId: videoId,
-                    startSeconds: startTime,
-                    endSeconds: endTime || undefined,
-                });
-            } else {
-                initializePlayer();
-                player.loadVideoById({
-                    videoId: videoId,
-                    startSeconds: startTime,
-                    endSeconds: endTime || undefined,
-                });
-            }
-
-            displayNotes(notes);
-        }
-
-        function playGuide(videoId, notes) {
-            if (player) {
-                player.loadVideoById({ videoId: videoId, startSeconds: 0 });
-            } else {
-                initializePlayer();
-                player.loadVideoById({ videoId: videoId, startSeconds: 0 });
-            }
-
-            displayNotes(notes);
-        }
-
-        function displayNotes(notes) {
-            const notesSection = document.getElementById('notes-section');
-            const notesContent = document.getElementById('notes-content');
-
-            if (notes) {
-                notesContent.innerHTML = notes.replace(/  /g, '<br>');
-                notesSection.style.display = 'block';
-            } else {
-                notesSection.style.display = 'none';
-            }
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.ENDED) {
-                player.seekTo(startTime);
-            }
-        }
-
-        // Ensure the player is reinitialized when switching pages
-        document.addEventListener("DOMContentLoaded", () => {
-            initializePlayer();
-        });
-    </script>
 </head>
 <body>
     <div id="left-panel">
         <h2>Dance Playlists</h2>
-        <div class="playlist-links">
-            {% for playlist, display_name in playlists %}
-            <div>
-                <a href="/playlist/{{ playlist }}"
-                   {% if playlist == playlist_name %}style="font-weight: bold;"{% endif %}>
-                   {{ display_name }}
+        <ul class="playlist-links">
+            {% for playlist in playlists %}
+            <li>
+                <a href="/playlist/{{ playlist[0] }}"
+                   {% if playlist[0] == playlist_name %}style="font-weight: bold;"{% endif %}>
+                   {{ playlist[1] }}
                 </a>
-            </div>
+            </li>
             {% endfor %}
-        </div>
+        </ul>
 
         <table>
             <thead>
@@ -169,11 +96,11 @@
                     <td>{{ move['move_name'] }}</td>
                     <td>{{ move['level'] }}</td>
                     <td>
-                        <button onclick="playGuide('{{ move['video_id'] }}', '{{ move['notes'] | escape }}')">Guide</button>
+                        <button onclick="playGuide('{{ move['video_id'] }}', {{ move['guide_start'] or 0 }}, '{{ move['notes'] | escape }}')">Guide</button>
                     </td>
                     <td>
-                        <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['start_time'] or 0 }}, {{ move['end_time'] if move['end_time'] else 'null' }}, '{{ move['notes'] | escape }}')">Loop</button>
-                    </td>
+                        <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['loop_start'] or 0 }}, {{ move['loop_end'] if move['loop_end'] is not none else 'null' }}, {{ move['loop_speed'] }}, '{{ move['notes'] | escape }}')">Loop</button>
+                    </td>                    
                 </tr>
                 {% endfor %}
             </tbody>
@@ -189,4 +116,76 @@
         <div id="player"></div>
     </div>
 </body>
+<script>
+    let player;
+    let startTime = 0;
+    let endTime = null;
+
+    function onYouTubeIframeAPIReady() {
+        initializePlayer();
+    }
+
+    function initializePlayer() {
+        if (!player) {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: '',
+                playerVars: { autoplay: 0, controls: 1 },
+                events: { onStateChange: onPlayerStateChange },
+            });
+        }
+    }
+
+    function playGuide(videoId, guideStart, notes) {
+        if (player) {
+            player.loadVideoById({
+                videoId: videoId,
+                startSeconds: guideStart || 0,
+            });
+            player.setPlaybackRate(1); // Normal speed for the guide
+        }
+        displayNotes(notes);
+    }
+
+    function loadVideo(videoId, start, end, speed, notes) {
+        console.log(`Loading video: ${videoId}, Start: ${start}, End: ${end}, Speed: ${speed}`); // Debugging
+
+        startTime = start || 0;
+        endTime = (end === undefined || end === null) ? null : end; // Handle undefined or null explicitly
+
+        if (player) {
+            player.loadVideoById({
+                videoId: videoId,
+                startSeconds: startTime,
+                endSeconds: endTime, // Use null for playing till the end
+            });
+            player.setPlaybackRate(speed || 1);
+        }
+
+        displayNotes(notes);
+    }
+
+    function displayNotes(notes) {
+        const notesSection = document.getElementById('notes-section');
+        const notesContent = document.getElementById('notes-content');
+
+        if (notes) {
+            notesContent.innerHTML = notes.replace(/  /g, '<br>');
+            notesSection.style.display = 'block';
+        } else {
+            notesSection.style.display = 'none';
+        }
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.ENDED && endTime) {
+            player.seekTo(startTime);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initializePlayer();
+    });
+</script>
 </html>
