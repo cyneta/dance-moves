@@ -3,49 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ playlist_name.replace('_', ' ').title() }}</title>
+    <title>{{ dance_type }}</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
-        /* Flexbox layout for horizontal alignment */
         body {
             display: flex;
             flex-direction: row;
             margin: 0;
             font-family: Arial, sans-serif;
-            height: 100vh; /* Full viewport height */
-            overflow: hidden; /* Avoid unnecessary scrollbars */
+            height: 100vh;
+            overflow: hidden;
         }
 
         #left-panel {
-            flex: 1; /* Allow it to take up available space */
+            flex: 1;
             padding: 10px;
-            overflow-y: auto; /* Enable vertical scrolling for long content */
+            overflow-y: auto;
+            box-sizing: border-box;
+            border-right: 1px solid #ddd;
         }
 
         #right-panel {
-            flex: 2; /* Take up more space than the left panel */
+            flex: 2;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
             padding: 10px;
+            overflow: hidden;
         }
 
         #player {
             width: 100%;
             height: 100%;
+            min-height: 315px;
+            aspect-ratio: 4 / 3;
+            border: 1px solid #ddd;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
-            table-layout: auto;
         }
 
         table th, table td {
             border: 1px solid #ddd;
-            padding: 4px;
+            padding: 6px;
             text-align: left;
             white-space: nowrap;
         }
@@ -59,27 +62,65 @@
             cursor: pointer;
         }
 
+        .playlist-links div {
+            margin: 5px 0;
+        }
+
+        .playlist-links a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+            padding: 5px 10px;
+            display: inline-block;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .playlist-links a:hover {
+            background-color: #007BFF;
+            color: #fff;
+        }
+
         #notes-section {
-            margin-top: 20px;
+            margin-top: 10px;
             padding: 10px;
             border: 1px solid #ccc;
             background-color: #f9f9f9;
+            font-size: 14px;
+            overflow-y: auto;
+            max-height: 30%;
+        }
+
+        @media (max-width: 768px) {
+            #left-panel {
+                flex: 0 0 150px;
+            }
+
+            #player {
+                max-height: 50vh;
+            }
+
+            #notes-section {
+                max-height: 20%;
+            }
         }
     </style>
 </head>
 <body>
     <div id="left-panel">
-        <h2>Dance Playlists</h2>
-        <ul class="playlist-links">
+        <h1>{{ dance_type }} Playlist</h1>
+        <div class="playlist-links">
             {% for playlist in playlists %}
-            <li>
+            <div>
                 <a href="/playlist/{{ playlist[0] }}"
                    {% if playlist[0] == playlist_name %}style="font-weight: bold;"{% endif %}>
                    {{ playlist[1] }}
                 </a>
-            </li>
+            </div>
             {% endfor %}
-        </ul>
+        </div>
 
         <table>
             <thead>
@@ -100,20 +141,19 @@
                     </td>
                     <td>
                         <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['loop_start'] or 0 }}, {{ move['loop_end'] if move['loop_end'] is not none else 'null' }}, {{ move['loop_speed'] }}, '{{ move['notes'] | escape }}')">Loop</button>
-                    </td>                    
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-
-        <div id="notes-section">
-            <h3>Notes</h3>
-            <p id="notes-content"></p>
-        </div>
     </div>
 
     <div id="right-panel">
-        <div id="player"></div>
+        <div id="player"></div> <!-- YouTube Player -->
+        <div id="notes-section">
+            <h3>Notes</h3>
+            <p id="notes-content">Select a move to see the notes here.</p>
+        </div>
     </div>
 </body>
 <script>
@@ -122,15 +162,17 @@
     let endTime = null;
 
     function onYouTubeIframeAPIReady() {
+        console.log("YouTube API is ready");
         initializePlayer();
     }
 
     function initializePlayer() {
         if (!player) {
+            console.log("Initializing YouTube Player");
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
-                videoId: '',
+                videoId: '', // Initially empty
                 playerVars: { autoplay: 0, controls: 1 },
                 events: { onStateChange: onPlayerStateChange },
             });
@@ -138,51 +180,69 @@
     }
 
     function playGuide(videoId, guideStart, notes) {
+        if (!videoId) {
+            console.error("Invalid videoId passed to playGuide!");
+            return;
+        }
+
+        console.log(`Playing guide for videoId: ${videoId}`);
         if (player) {
+            player.stopVideo(); // Reset the player
             player.loadVideoById({
                 videoId: videoId,
                 startSeconds: guideStart || 0,
             });
-            player.setPlaybackRate(1); // Normal speed for the guide
+            player.setPlaybackRate(1); // Normal speed
         }
         displayNotes(notes);
     }
 
     function loadVideo(videoId, start, end, speed, notes) {
-        console.log(`Loading video: ${videoId}, Start: ${start}, End: ${end}, Speed: ${speed}`); // Debugging
+        if (!videoId) {
+            console.error("Invalid videoId passed to loadVideo!");
+            return;
+        }
 
+        console.log(`Loading video: ${videoId}, start: ${start}, end: ${end}, speed: ${speed}`);
         startTime = start || 0;
-        endTime = (end === undefined || end === null) ? null : end; // Handle undefined or null explicitly
+        endTime = end === undefined || end === null ? null : end;
 
         if (player) {
+            player.stopVideo(); // Reset the player
             player.loadVideoById({
                 videoId: videoId,
                 startSeconds: startTime,
-                endSeconds: endTime, // Use null for playing till the end
+                endSeconds: endTime,
             });
             player.setPlaybackRate(speed || 1);
         }
-
         displayNotes(notes);
     }
 
     function displayNotes(notes) {
-        const notesSection = document.getElementById('notes-section');
-        const notesContent = document.getElementById('notes-content');
-
+        const notesContent = document.getElementById("notes-content");
         if (notes) {
-            notesContent.innerHTML = notes.replace(/  /g, '<br>');
-            notesSection.style.display = 'block';
+            notesContent.innerHTML = notes.replace(/\n/g, "<br>");
         } else {
-            notesSection.style.display = 'none';
+            notesContent.innerHTML = "No notes available.";
         }
     }
 
     function onPlayerStateChange(event) {
+        console.log(`Player state changed: ${event.data}`);
         if (event.data === YT.PlayerState.ENDED && endTime) {
-            player.seekTo(startTime);
+            player.seekTo(startTime); // Restart the video
         }
     }
+
+    // Reset player when navigating between playlists
+    window.addEventListener("beforeunload", () => {
+        console.log("Resetting player");
+        if (player) {
+            player.destroy();
+            player = null;
+        }
+    });
 
     document.addEventListener("DOMContentLoaded", () => {
         initializePlayer();
