@@ -6,124 +6,6 @@
     <title>{{ dance_type }}</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://www.youtube.com/iframe_api"></script>
-    <style>
-        body {
-            display: flex;
-            flex-direction: row;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        #left-panel {
-            flex: 0 0 25%; /* Set moves table width to 30% of the total space */
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            box-sizing: border-box;
-            border-right: 1px solid #ddd;
-            overflow: hidden;
-        }
-
-        #moves-table-container {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-
-        #notes-section {
-            height: 225px; /* Increased height by 50% */
-            padding: 5px; /* Minimal padding around the panel */
-            font-size: 14px;
-            line-height: 2.0; /* Increased spacing between lines */
-            overflow-y: auto; /* Enable vertical scrolling */
-            overflow-x: auto; /* Enable horizontal scrolling */
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
-            white-space: nowrap; /* Prevent text from wrapping */
-        }
-
-        #notes-section h3 {
-            margin: 0; /* Remove default margin */
-            padding: 2px 0; /* Minimal vertical padding */
-            font-size: 16px; /* Adjust size for consistency */
-            text-align: left; /* Align header text */
-        }
-
-        #right-panel {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            overflow: hidden;
-        }
-
-        #player {
-            width: 100%;
-            height: auto;
-            min-height: 315px;
-            aspect-ratio: 4 / 3;
-            border: 1px solid #ddd;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        table th, table td {
-            border: 1px solid #ddd;
-            padding: 6px;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        table th {
-            background-color: #f4f4f4;
-        }
-
-        table tr:hover {
-            background-color: #f1f1f1;
-            cursor: pointer;
-        }
-
-        .playlist-links div {
-            margin: 5px 0;
-        }
-
-        .playlist-links a {
-            text-decoration: none;
-            color: #007BFF;
-            font-weight: bold;
-            padding: 5px 10px;
-            display: inline-block;
-            border: 1px solid #ddd;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-            transition: all 0.3s;
-        }
-
-        .playlist-links a:hover {
-            background-color: #007BFF;
-            color: #fff;
-        }
-
-        @media (max-width: 768px) {
-            #left-panel {
-                flex: 0 0 150px;
-            }
-
-            #player {
-                max-height: 50vh;
-            }
-
-            #notes-section {
-                height: 100px; /* Adjust height for smaller screens */
-            }
-        }
-    </style>
 </head>
 <body>
     <div id="left-panel">
@@ -131,8 +13,7 @@
         <div class="playlist-links">
             {% for playlist in playlists %}
             <div>
-                <a href="/playlist/{{ playlist[0] }}"
-                   {% if playlist[0] == playlist_name %}style="font-weight: bold;"{% endif %}>
+                <a href="/playlist/{{ playlist[0] }}"{% if playlist[0] == playlist_name %} style="font-weight: bold;"{% endif %}>
                    {{ playlist[1] }}
                 </a>
             </div>
@@ -175,7 +56,6 @@
     <div id="right-panel">
         <div id="player"></div>
     </div>
-</body>
 <script>
     let player;
 
@@ -213,7 +93,14 @@
 
     function displayNotes(notes) {
         const notesContent = document.getElementById("notes-content");
-        notesContent.innerHTML = notes ? notes.replace(/  /g, "<br>") : "No notes available.";
+
+        // Handle cases where notes are invalid or missing
+        if (!notes || notes.trim() === "") {
+            notesContent.innerHTML = "No notes available.";
+        } else {
+            // Replace double spaces with <br> for multi-line formatting
+            notesContent.innerHTML = notes.replace(/  /g, "<br>");
+        }
     }
 
     function onPlayerStateChange(event) {
@@ -224,4 +111,103 @@
 
     document.addEventListener("DOMContentLoaded", initializePlayer);
 </script>
+<style>
+    body {
+        display: flex;
+        flex-direction: row;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    #left-panel {
+        flex: 0 0 30%; /* Left panel width */
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        box-sizing: border-box;
+        border-right: 1px solid #ddd;
+        overflow: hidden;
+    }
+
+    #moves-table-container {
+        flex: 1; /* Allow the table to take up the remaining space */
+        overflow-y: auto; /* Enable vertical scrolling if content exceeds height */
+        margin-bottom: 10px;
+    }
+
+    #notes-section {
+        height: 150px; /* Fixed height for the notes panel */
+        flex-shrink: 0; /* Prevent shrinking of the notes panel */
+        padding: 5px;
+        font-size: 14px;
+        line-height: 2.0;
+        overflow-y: auto; /* Enable vertical scrolling for long notes */
+        overflow-x: auto; /* Enable horizontal scrolling for long lines */
+        border: 1px solid #ccc;
+        background-color: #f9f9f9;
+        white-space: nowrap; /* Prevent text wrapping */
+    }
+
+    #right-panel {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        overflow: hidden;
+    }
+
+    #player {
+        width: 100%;
+        height: auto;
+        min-height: 315px;
+        aspect-ratio: 4 / 3; /* Maintain 4:3 aspect ratio */
+        border: 1px solid #ddd;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    table th, table td {
+        border: 1px solid #ddd;
+        padding: 6px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    table th {
+        background-color: #f4f4f4;
+    }
+
+    table tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+    }
+
+    .playlist-links div {
+        margin: 5px 0;
+    }
+
+    .playlist-links a {
+        text-decoration: none;
+        color: #007BFF;
+        font-weight: bold;
+        padding: 5px 10px;
+        display: inline-block;
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+
+    .playlist-links a:hover {
+        background-color: #007BFF;
+        color: #fff;
+    }
+</style>
+</body>
 </html>

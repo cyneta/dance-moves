@@ -69,6 +69,9 @@ def playlist(playlist_name):
 
     filtered_moves = data[data[playlist_name].notna() & (data[playlist_name] != '')]
 
+    # Replace NaN in 'notes' with a default value
+    filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes available.")
+
     # Extract dance type from the CSV filename
     dance_type = os.path.basename(file_path).split('_')[0].capitalize()
 
