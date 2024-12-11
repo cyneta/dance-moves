@@ -1,6 +1,6 @@
 body {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     margin: 0;
     font-family: Arial, sans-serif;
     height: 100vh; /* Full viewport height */
@@ -16,7 +16,7 @@ h1 {
 
 #left-panel {
     width: auto;
-    max-width: 40%;
+    max-width: 35%; /* Reduce moves table width by ~30% */
     border-right: 1px solid #ccc;
     padding: 10px;
     overflow-y: auto;
@@ -63,12 +63,14 @@ table tr:hover {
 }
 
 #notes-section {
-    font-size: 12px;
-    margin-top: 20px;
-    padding: 10px;
+    display: block; /* Ensure it's always visible */
+    font-size: 14px; /* Adjusted for better readability */
+    margin-top: 10px; /* Reduced margin for more space efficiency */
+    padding: 5px; /* Minimized padding */
+    height: 150px; /* Increased height by ~50% */
     border: 1px solid #ccc;
     background-color: #f9f9f9;
-    display: none;
+    overflow-y: auto; /* Enable scrolling for long notes */
 }
 
 .playlist-links {

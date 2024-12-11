@@ -17,15 +17,42 @@
         }
 
         #left-panel {
-            flex: 1;
+            flex: 0 0 25%; /* Set moves table width to 30% of the total space */
+            display: flex;
+            flex-direction: column;
             padding: 10px;
-            overflow-y: auto;
             box-sizing: border-box;
             border-right: 1px solid #ddd;
+            overflow: hidden;
+        }
+
+        #moves-table-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        #notes-section {
+            height: 225px; /* Increased height by 50% */
+            padding: 5px; /* Minimal padding around the panel */
+            font-size: 14px;
+            line-height: 2.0; /* Increased spacing between lines */
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: auto; /* Enable horizontal scrolling */
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        #notes-section h3 {
+            margin: 0; /* Remove default margin */
+            padding: 2px 0; /* Minimal vertical padding */
+            font-size: 16px; /* Adjust size for consistency */
+            text-align: left; /* Align header text */
         }
 
         #right-panel {
-            flex: 2;
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
             padding: 10px;
@@ -34,7 +61,7 @@
 
         #player {
             width: 100%;
-            height: 100%;
+            height: auto;
             min-height: 315px;
             aspect-ratio: 4 / 3;
             border: 1px solid #ddd;
@@ -83,16 +110,6 @@
             color: #fff;
         }
 
-        #notes-section {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
-            font-size: 14px;
-            overflow-y: auto;
-            max-height: 30%;
-        }
-
         @media (max-width: 768px) {
             #left-panel {
                 flex: 0 0 150px;
@@ -103,7 +120,7 @@
             }
 
             #notes-section {
-                max-height: 20%;
+                height: 100px; /* Adjust height for smaller screens */
             }
         }
     </style>
@@ -122,57 +139,56 @@
             {% endfor %}
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Move</th>
-                    <th>Level</th>
-                    <th>Guide</th>
-                    <th>Loop</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for move in moves %}
-                <tr>
-                    <td>{{ move['move_name'] }}</td>
-                    <td>{{ move['level'] }}</td>
-                    <td>
-                        <button onclick="playGuide('{{ move['video_id'] }}', {{ move['guide_start'] or 0 }}, '{{ move['notes'] | escape }}')">Guide</button>
-                    </td>
-                    <td>
-                        <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['loop_start'] or 0 }}, {{ move['loop_end'] if move['loop_end'] is not none else 'null' }}, {{ move['loop_speed'] }}, '{{ move['notes'] | escape }}')">Loop</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <div id="moves-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Move</th>
+                        <th>Level</th>
+                        <th>Guide</th>
+                        <th>Loop</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for move in moves %}
+                    <tr>
+                        <td>{{ move['move_name'] }}</td>
+                        <td>{{ move['level'] }}</td>
+                        <td>
+                            <button onclick="playGuide('{{ move['video_id'] }}', {{ move['guide_start'] or 0 }}, '{{ move['notes'] | escape }}')">Guide</button>
+                        </td>
+                        <td>
+                            <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['loop_start'] or 0 }}, {{ move['loop_end'] if move['loop_end'] is not none else 'null' }}, {{ move['loop_speed'] }}, '{{ move['notes'] | escape }}')">Loop</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <div id="right-panel">
-        <div id="player"></div> <!-- YouTube Player -->
         <div id="notes-section">
             <h3>Notes</h3>
             <p id="notes-content">Select a move to see the notes here.</p>
         </div>
     </div>
+
+    <div id="right-panel">
+        <div id="player"></div>
+    </div>
 </body>
 <script>
     let player;
-    let startTime = 0;
-    let endTime = null;
 
     function onYouTubeIframeAPIReady() {
-        console.log("YouTube API is ready");
         initializePlayer();
     }
 
     function initializePlayer() {
         if (!player) {
-            console.log("Initializing YouTube Player");
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
-                videoId: '', // Initially empty
+                videoId: '',
                 playerVars: { autoplay: 0, controls: 1 },
                 events: { onStateChange: onPlayerStateChange },
             });
@@ -180,40 +196,16 @@
     }
 
     function playGuide(videoId, guideStart, notes) {
-        if (!videoId) {
-            console.error("Invalid videoId passed to playGuide!");
-            return;
-        }
-
-        console.log(`Playing guide for videoId: ${videoId}`);
         if (player) {
-            player.stopVideo(); // Reset the player
-            player.loadVideoById({
-                videoId: videoId,
-                startSeconds: guideStart || 0,
-            });
-            player.setPlaybackRate(1); // Normal speed
+            player.loadVideoById({ videoId, startSeconds: guideStart || 0 });
+            player.setPlaybackRate(1);
         }
         displayNotes(notes);
     }
 
     function loadVideo(videoId, start, end, speed, notes) {
-        if (!videoId) {
-            console.error("Invalid videoId passed to loadVideo!");
-            return;
-        }
-
-        console.log(`Loading video: ${videoId}, start: ${start}, end: ${end}, speed: ${speed}`);
-        startTime = start || 0;
-        endTime = end === undefined || end === null ? null : end;
-
         if (player) {
-            player.stopVideo(); // Reset the player
-            player.loadVideoById({
-                videoId: videoId,
-                startSeconds: startTime,
-                endSeconds: endTime,
-            });
+            player.loadVideoById({ videoId, startSeconds: start, endSeconds: end });
             player.setPlaybackRate(speed || 1);
         }
         displayNotes(notes);
@@ -221,31 +213,15 @@
 
     function displayNotes(notes) {
         const notesContent = document.getElementById("notes-content");
-        if (notes) {
-            notesContent.innerHTML = notes.replace(/\n/g, "<br>");
-        } else {
-            notesContent.innerHTML = "No notes available.";
-        }
+        notesContent.innerHTML = notes ? notes.replace(/  /g, "<br>") : "No notes available.";
     }
 
     function onPlayerStateChange(event) {
-        console.log(`Player state changed: ${event.data}`);
-        if (event.data === YT.PlayerState.ENDED && endTime) {
-            player.seekTo(startTime); // Restart the video
+        if (event.data === YT.PlayerState.ENDED) {
+            player.seekTo(0);
         }
     }
 
-    // Reset player when navigating between playlists
-    window.addEventListener("beforeunload", () => {
-        console.log("Resetting player");
-        if (player) {
-            player.destroy();
-            player = null;
-        }
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-        initializePlayer();
-    });
+    document.addEventListener("DOMContentLoaded", initializePlayer);
 </script>
 </html>
