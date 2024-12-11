@@ -36,10 +36,10 @@
                         <td>{{ move['move_name'] }}</td>
                         <td>{{ move['level'] }}</td>
                         <td>
-                            <button onclick="playGuide('{{ move['video_id'] }}', {{ move['guide_start'] or 0 }}, '{{ move['notes'] | escape }}')">Guide</button>
+                            <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['loop_start'] or 0 }}, {{ move['loop_end'] if move['loop_end'] is not none else 'null' }}, {{ move['loop_speed'] }}, '{{ move['notes'] | escape }}')">Loop</button>
                         </td>
                         <td>
-                            <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['loop_start'] or 0 }}, {{ move['loop_end'] if move['loop_end'] is not none else 'null' }}, {{ move['loop_speed'] }}, '{{ move['notes'] | escape }}')">Loop</button>
+                            <button onclick="playGuide('{{ move['video_id'] }}', {{ move['guide_start'] or 0 }}, '{{ move['notes'] | escape }}')">Guide</button>
                         </td>
                     </tr>
                     {% endfor %}
