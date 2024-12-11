@@ -13,7 +13,7 @@
         <div id="dance-style-buttons" class="left-aligned">
             <a href="/salsa"><button>Salsa</button></a>
             <a href="/bachata"><button>Bachata</button></a>
-            <a href="/Swing"><button>Swing</button></a>
+            <a href="/swing"><button>Swing</button></a>
         </div>
         <div class="playlist-links">
             {% for playlist in playlists %}
@@ -42,10 +42,26 @@
                         <td>{{ move['move_name'] }}</td>
                         <td>{{ move['level'] }}</td>
                         <td>
-                            <button onclick="loadVideo('{{ move['video_id'] }}', {{ move['loop_start'] or 0 }}, {{ move['loop_end'] if move['loop_end'] is not none else 'null' }}, {{ move['loop_speed'] }}, '{{ move['notes'] | escape }}')">Loop</button>
+                            <button 
+                                onclick="loadVideo(
+                                    '{{ move['video_id'] }}', 
+                                    {{ move['loop_start'] }}, 
+                                    {{ move['loop_end'] }}, 
+                                    {{ move['loop_speed'] }}, 
+                                    '{{ move['notes'] | escape }}'
+                                )">
+                                Loop
+                            </button>
                         </td>
                         <td>
-                            <button onclick="playGuide('{{ move['video_id'] }}', {{ move['guide_start'] or 0 }}, '{{ move['notes'] | escape }}')">Guide</button>
+                            <button 
+                                onclick="playGuide(
+                                    '{{ move['video_id'] }}', 
+                                    {{ move['guide_start'] }}, 
+                                    '{{ move['notes'] | escape }}'
+                                )">
+                                Guide
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -62,196 +78,139 @@
     <div id="right-panel">
         <div id="player"></div>
     </div>
-<script>
-    let player;
+    <script>
+        let player;
 
-    function onYouTubeIframeAPIReady() {
-        initializePlayer();
-    }
-
-    function initializePlayer() {
-        if (!player) {
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: '',
-                playerVars: { autoplay: 0, controls: 1 },
-                events: { onStateChange: onPlayerStateChange },
-            });
+        function onYouTubeIframeAPIReady() {
+            initializePlayer();
         }
-    }
 
-    function playGuide(videoId, guideStart, notes) {
-        if (player) {
-            player.loadVideoById({ videoId, startSeconds: guideStart || 0 });
-            player.setPlaybackRate(1);
+        function initializePlayer() {
+            if (!player) {
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: '',
+                    playerVars: { autoplay: 0, controls: 1 },
+                    events: { onStateChange: onPlayerStateChange },
+                });
+            }
         }
-        displayNotes(notes);
-    }
 
-    function loadVideo(videoId, start, end, speed, notes) {
-        if (player) {
-            player.loadVideoById({ videoId, startSeconds: start || 0, endSeconds: end });
-            player.setPlaybackRate(speed || 1);
+        function playGuide(videoId, guideStart, notes) {
+            if (player) {
+                player.loadVideoById({ videoId, startSeconds: guideStart });
+                player.setPlaybackRate(1);
+            }
+            displayNotes(notes);
         }
-        displayNotes(notes);
-    }
 
-    function displayNotes(notes) {
-        const notesContent = document.getElementById("notes-content");
-
-        if (!notes || notes.trim() === "") {
-            notesContent.innerHTML = "No notes available.";
-        } else {
-            notesContent.innerHTML = notes.replace(/  /g, "<br>");
+        function loadVideo(videoId, start, end, speed, notes) {
+            if (player) {
+                player.loadVideoById({ videoId, startSeconds: start, endSeconds: end });
+                player.setPlaybackRate(speed);
+            }
+            displayNotes(notes);
         }
-    }
 
-    function onPlayerStateChange(event) {
-        if (event.data === YT.PlayerState.ENDED) {
-            player.seekTo(0);
+        function displayNotes(notes) {
+            const notesContent = document.getElementById("notes-content");
+            notesContent.innerHTML = notes ? notes.replace(/  /g, "<br>") : "No notes available.";
         }
-    }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const leftPanel = document.getElementById("left-panel");
-        const notesSection = document.getElementById("notes-section");
-        const movesTable = document.getElementById("moves-table-container");
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                player.seekTo(0); // Loop to the beginning
+            }
+        }
 
-        console.log("Left Panel Dimensions:", leftPanel.getBoundingClientRect());
-        console.log("Notes Section Dimensions:", notesSection.getBoundingClientRect());
-        console.log("Moves Table Dimensions:", movesTable.getBoundingClientRect());
+        document.addEventListener("DOMContentLoaded", () => {
+            initializePlayer();
+        });
+    </script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-        initializePlayer();
-    });
-</script>
-<style>
-    body {
-        display: flex;
-        flex-direction: row;
-        margin: 0;
-        font-family: Arial, sans-serif;
-        height: 100vh;
-        overflow: hidden;
-    }
+        h1 {
+            text-align: left;
+            margin: 0;
+            font-size: 24px;
+        }
 
-    h1 {
-        text-align: left;
-        margin: 0;
-        font-size: 24px;
-    }
+        #dance-style-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            justify-content: flex-start;
+        }
 
-    #dance-style-buttons {
-        display: flex;
-        gap: 10px;
-        margin: 10px 0;
-        justify-content: flex-start; /* Align buttons to the left */
-    }
+        #dance-style-buttons button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
 
-    #dance-style-buttons button {
-        padding: 10px 20px;
-        border: none;
-        background-color: #007BFF;
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-    }
+        #dance-style-buttons button:hover {
+            background-color: #0056b3;
+        }
 
-    #dance-style-buttons button:hover {
-        background-color: #0056b3;
-    }
+        #left-panel {
+            flex: 0 0 30%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+            border-right: 1px solid #ddd;
+        }
 
-    #left-panel {
-        flex: 0 0 30%;
-        display: flex;
-        flex-direction: column;
-        padding: 10px;
-        box-sizing: border-box;
-        border-right: 1px solid #ddd;
-        overflow: hidden;
-    }
+        #moves-table-container {
+            margin-top: 15px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
 
-    #moves-table-container {
-        flex: 1;
-        margin-top: 15px; /* Added more space above the moves table */
-        max-height: 80%;
-        overflow-y: auto;
-        margin-bottom: 10px;
-    }
+        #notes-section {
+            height: 200px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
 
-    #notes-section {
-        height: 200px;
-        flex-shrink: 0;
-        padding: 5px;
-        font-size: 14px;
-        line-height: 2.0;
-        overflow-y: auto;
-        overflow-x: auto;
-        border: 1px solid #ccc;
-        background-color: #f9f9f9;
-        white-space: nowrap;
-        margin-top: auto;
-    }
+        #right-panel {
+            flex-grow: 1;
+            padding: 10px;
+        }
 
-    #right-panel {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        padding: 10px;
-        overflow: hidden;
-    }
+        #player {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            border: 1px solid #ddd;
+        }
 
-    #player {
-        width: 100%;
-        height: auto;
-        min-height: 315px;
-        aspect-ratio: 4 / 3;
-        border: 1px solid #ddd;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-    }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+        }
 
-    table th, table td {
-        border: 1px solid #ddd;
-        padding: 6px;
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    table th {
-        background-color: #f4f4f4;
-    }
-
-    table tr:hover {
-        background-color: #f1f1f1;
-        cursor: pointer;
-    }
-
-    .playlist-links div {
-        margin: 5px 0;
-    }
-
-    .playlist-links a {
-        text-decoration: none;
-        color: #007BFF;
-        font-weight: bold;
-        padding: 5px 10px;
-        display: inline-block;
-        border: 1px solid #ddd;
-        background-color: #f9f9f9;
-        border-radius: 4px;
-        transition: all 0.3s;
-    }
-
-    .playlist-links a:hover {
-        background-color: #007BFF;
-        color: white;
-    }
-</style>
+        table th {
+            background-color: #f4f4f4;
+        }
+    </style>
 </body>
 </html>
