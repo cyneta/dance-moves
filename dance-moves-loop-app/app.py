@@ -31,8 +31,22 @@ def time_to_seconds(time_value, default=None):
 
 @app.route('/')
 def home():
-    # Automatically redirect to the first playlist
-    file_path = os.path.join(BASE_DIR, 'data', 'salsa_moves.csv')
+    """
+    Display a home page with links to available dance types.
+    """
+    dance_types = ['salsa', 'bachata', 'Swing']  # Add more dance types as needed
+    return render_template('home.html', dance_types=dance_types)
+
+@app.route('/<dance_type>', defaults={'playlist_name': None})
+@app.route('/<dance_type>/<playlist_name>')
+def playlist(dance_type, playlist_name):
+    """
+    Display a playlist for a specific dance type.
+    """
+    file_path = os.path.join(BASE_DIR, f'data/{dance_type}_moves.csv')
+    if not os.path.exists(file_path):
+        return f"Dance type '{dance_type}' not supported!", 404
+
     data = pd.read_csv(file_path)
 
     fixed_columns = [
@@ -44,36 +58,17 @@ def home():
     ]
     playlist_columns.sort(key=lambda col: int(re.match(r'^\d+', col).group()))
 
-    first_playlist = playlist_columns[0] if playlist_columns else None
-    if first_playlist:
-        return playlist(first_playlist)
-    else:
-        return "No playlists available!", 404
+    # Handle missing playlist_name by using the first available playlist
+    if not playlist_name:
+        playlist_name = playlist_columns[0] if playlist_columns else None
 
-@app.route('/playlist/<playlist_name>')
-def playlist(playlist_name):
-    file_path = os.path.join(BASE_DIR, 'data', 'salsa_moves.csv')
-    data = pd.read_csv(file_path)
-
-    fixed_columns = [
-        'move_name', 'move_type', 'source', 'video_id',
-        'loop_start', 'loop_end', 'loop_speed', 'guide_start', 'level', 'notes'
-    ]
-    playlist_columns = [
-        col for col in data.columns if col not in fixed_columns and re.match(r'^\d+', col)
-    ]
-    playlist_columns.sort(key=lambda col: int(re.match(r'^\d+', col).group()))
-
-    if playlist_name not in playlist_columns:
+    if not playlist_name or playlist_name not in playlist_columns:
         return f"Playlist '{playlist_name}' does not exist!", 404
 
     filtered_moves = data[data[playlist_name].notna() & (data[playlist_name] != '')]
 
     # Replace NaN in 'notes' with a default value
     filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes available.")
-
-    # Extract dance type from the CSV filename
-    dance_type = os.path.basename(file_path).split('_')[0].capitalize()
 
     # Time conversions with default handling
     filtered_moves['loop_start'] = filtered_moves['loop_start'].apply(lambda x: time_to_seconds(x, 0))
@@ -86,8 +81,9 @@ def playlist(playlist_name):
         moves=filtered_moves.to_dict('records'),
         playlist_name=playlist_name,
         playlists=[(col, re.sub(r'^\d+', '', col).strip()) for col in playlist_columns],
-        dance_type=dance_type
+        dance_type=dance_type.capitalize()
     )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

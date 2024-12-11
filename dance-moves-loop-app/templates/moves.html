@@ -9,11 +9,17 @@
 </head>
 <body>
     <div id="left-panel">
-        <h1>{{ dance_type }} Playlist</h1>
+        <h1>{{ dance_type }} Playlists</h1>
+        <div id="dance-style-buttons" class="left-aligned">
+            <a href="/salsa"><button>Salsa</button></a>
+            <a href="/bachata"><button>Bachata</button></a>
+            <a href="/Swing"><button>Swing</button></a>
+        </div>
         <div class="playlist-links">
             {% for playlist in playlists %}
             <div>
-                <a href="/playlist/{{ playlist[0] }}"{% if playlist[0] == playlist_name %} style="font-weight: bold;"{% endif %}>
+                <a href="/{{ dance_type | lower }}/{{ playlist[0] }}" 
+                   {% if playlist[0] == playlist_name %} style="font-weight: bold;"{% endif %}>
                    {{ playlist[1] }}
                 </a>
             </div>
@@ -129,6 +135,33 @@
         overflow: hidden;
     }
 
+    h1 {
+        text-align: left;
+        margin: 0;
+        font-size: 24px;
+    }
+
+    #dance-style-buttons {
+        display: flex;
+        gap: 10px;
+        margin: 10px 0;
+        justify-content: flex-start; /* Align buttons to the left */
+    }
+
+    #dance-style-buttons button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #007BFF;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    #dance-style-buttons button:hover {
+        background-color: #0056b3;
+    }
+
     #left-panel {
         flex: 0 0 30%;
         display: flex;
@@ -141,13 +174,14 @@
 
     #moves-table-container {
         flex: 1;
-        max-height: 80%; /* Restrict height to 60% of the viewport */
+        margin-top: 15px; /* Added more space above the moves table */
+        max-height: 80%;
         overflow-y: auto;
         margin-bottom: 10px;
     }
 
     #notes-section {
-        height: 200px; /* Fixed height */
+        height: 200px;
         flex-shrink: 0;
         padding: 5px;
         font-size: 14px;
@@ -157,7 +191,7 @@
         border: 1px solid #ccc;
         background-color: #f9f9f9;
         white-space: nowrap;
-        margin-top: auto; /* Push it higher if possible */
+        margin-top: auto;
     }
 
     #right-panel {
@@ -216,7 +250,7 @@
 
     .playlist-links a:hover {
         background-color: #007BFF;
-        color: #fff;
+        color: white;
     }
 </style>
 </body>
