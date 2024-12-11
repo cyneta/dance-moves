@@ -26,8 +26,8 @@
                     <tr>
                         <th>Move</th>
                         <th>Level</th>
-                        <th>Guide</th>
                         <th>Loop</th>
+                        <th>Guide</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -85,7 +85,7 @@
 
     function loadVideo(videoId, start, end, speed, notes) {
         if (player) {
-            player.loadVideoById({ videoId, startSeconds: start, endSeconds: end });
+            player.loadVideoById({ videoId, startSeconds: start || 0, endSeconds: end });
             player.setPlaybackRate(speed || 1);
         }
         displayNotes(notes);
@@ -109,7 +109,17 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", initializePlayer);
+    document.addEventListener("DOMContentLoaded", () => {
+        const leftPanel = document.getElementById("left-panel");
+        const notesSection = document.getElementById("notes-section");
+        const movesTable = document.getElementById("moves-table-container");
+
+        console.log("Left Panel Dimensions:", leftPanel.getBoundingClientRect());
+        console.log("Notes Section Dimensions:", notesSection.getBoundingClientRect());
+        console.log("Moves Table Dimensions:", movesTable.getBoundingClientRect());
+
+        initializePlayer();
+    });
 </script>
 <style>
     body {
@@ -132,8 +142,9 @@
     }
 
     #moves-table-container {
-        flex: 1; /* Allow the table to take up the remaining space */
-        overflow-y: auto; /* Enable vertical scrolling if content exceeds height */
+        flex: 1;
+        max-height: 55%; /* Restrict height to 60% of the viewport */
+        overflow-y: auto;
         margin-bottom: 10px;
     }
 
