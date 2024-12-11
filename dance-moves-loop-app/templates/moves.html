@@ -31,7 +31,6 @@
                 <thead>
                     <tr>
                         <th>Move</th>
-                        <th>Level</th>
                         <th>Loop</th>
                         <th>Guide</th>
                     </tr>
@@ -40,7 +39,6 @@
                     {% for move in moves %}
                     <tr>
                         <td>{{ move['move_name'] }}</td>
-                        <td>{{ move['level'] }}</td>
                         <td>
                             <button 
                                 onclick="loadVideo(
@@ -66,7 +64,7 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>
+            </table>            
         </div>
 
         <div id="notes-section">
@@ -166,7 +164,7 @@
         }
 
         #left-panel {
-            flex: 0 0 30%;
+            flex: 0 0 20%; /* Reduced width from 30% to 24% */
             display: flex;
             flex-direction: column;
             padding: 10px;
