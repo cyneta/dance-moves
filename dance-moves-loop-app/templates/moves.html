@@ -94,11 +94,9 @@
     function displayNotes(notes) {
         const notesContent = document.getElementById("notes-content");
 
-        // Handle cases where notes are invalid or missing
         if (!notes || notes.trim() === "") {
             notesContent.innerHTML = "No notes available.";
         } else {
-            // Replace double spaces with <br> for multi-line formatting
             notesContent.innerHTML = notes.replace(/  /g, "<br>");
         }
     }
@@ -132,7 +130,7 @@
     }
 
     #left-panel {
-        flex: 0 0 30%; /* Left panel width */
+        flex: 0 0 30%;
         display: flex;
         flex-direction: column;
         padding: 10px;
@@ -143,22 +141,23 @@
 
     #moves-table-container {
         flex: 1;
-        max-height: 55%; /* Restrict height to 60% of the viewport */
+        max-height: 80%; /* Restrict height to 60% of the viewport */
         overflow-y: auto;
         margin-bottom: 10px;
     }
 
     #notes-section {
-        height: 150px; /* Fixed height for the notes panel */
-        flex-shrink: 0; /* Prevent shrinking of the notes panel */
+        height: 200px; /* Fixed height */
+        flex-shrink: 0;
         padding: 5px;
         font-size: 14px;
         line-height: 2.0;
-        overflow-y: auto; /* Enable vertical scrolling for long notes */
-        overflow-x: auto; /* Enable horizontal scrolling for long lines */
+        overflow-y: auto;
+        overflow-x: auto;
         border: 1px solid #ccc;
         background-color: #f9f9f9;
-        white-space: nowrap; /* Prevent text wrapping */
+        white-space: nowrap;
+        margin-top: auto; /* Push it higher if possible */
     }
 
     #right-panel {
@@ -173,7 +172,7 @@
         width: 100%;
         height: auto;
         min-height: 315px;
-        aspect-ratio: 4 / 3; /* Maintain 4:3 aspect ratio */
+        aspect-ratio: 4 / 3;
         border: 1px solid #ddd;
     }
 
