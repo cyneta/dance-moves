@@ -32,10 +32,9 @@ def time_to_seconds(time_value, default=None):
 @app.route('/')
 def home():
     """
-    Display a home page with links to available dance types.
+    Redirect to the default Salsa page.
     """
-    dance_types = ['salsa', 'bachata', 'Swing']  # Add more dance types as needed
-    return render_template('home.html', dance_types=dance_types)
+    return redirect('/salsa')
 
 @app.route('/<dance_type>', defaults={'playlist_name': None})
 @app.route('/<dance_type>/<playlist_name>')
