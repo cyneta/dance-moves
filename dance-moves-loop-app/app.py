@@ -1,7 +1,7 @@
 import os
 import re
 import logging
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect
 import pandas as pd
 
 # Initialize Flask app
@@ -32,11 +32,11 @@ def time_to_seconds(time_value, default=None):
 @app.route('/')
 def home():
     """
-    Redirect to the default Salsa page.
+    Redirect to the default dance type (Salsa).
     """
     return redirect('/salsa')
 
-@app.route('/<dance_type>', defaults={'playlist_name': None})
+@app.route('/<dance_type>/', defaults={'playlist_name': None})
 @app.route('/<dance_type>/<playlist_name>')
 def playlist(dance_type, playlist_name):
     """
@@ -71,12 +71,9 @@ def playlist(dance_type, playlist_name):
 
     # Time conversions with default handling
     filtered_moves['loop_start'] = filtered_moves['loop_start'].apply(lambda x: time_to_seconds(x, 0))  # Default to 0
-    filtered_moves['loop_end'] = filtered_moves['loop_end'].apply(lambda x: time_to_seconds(x, 10))  # Default to 100
+    filtered_moves['loop_end'] = filtered_moves['loop_end'].apply(lambda x: time_to_seconds(x, 10))  # Default to 10 seconds
     filtered_moves['loop_speed'] = filtered_moves['loop_speed'].fillna(1).astype(float)  # Default to 1
     filtered_moves['guide_start'] = filtered_moves['guide_start'].apply(lambda x: time_to_seconds(x, 0))  # Default to 0
-
-    # Replace NaN in 'notes' with a default value
-    filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes available.")
 
     # Remove rows with critical missing fields
     filtered_moves = filtered_moves.dropna(subset=['move_name', 'video_id'])

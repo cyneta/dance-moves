@@ -140,7 +140,7 @@
             text-align: left;
             margin: 0;
             font-size: 24px;
-            padding: 10px 0; /* Consistent spacing */
+            padding: 10px 0;
         }
 
         #dance-style-buttons {
@@ -151,7 +151,7 @@
         }
 
         #dance-style-buttons button {
-            padding: 8px 16px; /* Adjusted to balance proportions */
+            padding: 8px 16px;
             border: none;
             background-color: #007BFF;
             color: white;
@@ -168,7 +168,7 @@
             flex: 0 0 24%;
             display: flex;
             flex-direction: column;
-            height: 97%; /* Adjusted to full height */
+            height: 97%;
             padding: 10px;
             box-sizing: border-box;
             border-right: 1px solid #ddd;
@@ -177,22 +177,28 @@
         #moves-table-container {
             flex: 1;
             overflow-y: auto;
-            margin: 10px 0; /* Consistent spacing */
+            margin: 10px 0;
         }
 
         #notes-section {
             height: 200px;
-            padding: 10px; /* Increased for readability */
+            padding: 10px;
             border: 1px solid #ccc;
             background-color: #f9f9f9;
             flex-shrink: 0;
-            margin: 10px 0; /* Consistent spacing */
+            margin: 10px 0;
+            overflow-y:auto;
         }
+
+        #notes-section h3 {
+            margin: 0px 0; /* Reduce spacing above and below the "Notes" header */
+            font-size: 16px; /* Adjust font size if necessary */
+        }        
 
         #right-panel {
             flex-grow: 1;
             padding: 10px;
-            box-sizing: border-box; /* Ensure padding is consistent */
+            box-sizing: border-box; 
         }
 
         #player {
@@ -204,12 +210,12 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px; /* Adds separation from surrounding content */
+            margin-top: 10px;
         }
 
         table th, table td {
             border: 1px solid #ddd;
-            padding: 8px; /* Slightly increased for comfort */
+            padding: 8px; 
             text-align: left;
         }
 
@@ -218,7 +224,7 @@
         }
 
         table tr:hover {
-            background-color: #f9f9f9; /* Subtle hover effect for better user experience */
+            background-color: #f9f9f9;
         }
     </style>
 </body>
