@@ -34,22 +34,23 @@ body {
     border: 1px solid #ddd;
 }
 
+/* Table Styles */
 table {
     width: 100%;
     max-width: 500px;
     border-collapse: collapse;
+    table-layout: auto;
+}
+
+table th, table td {
+    font-size: 14px; /* Adjusted to a slightly smaller size */
+    border: 1px solid #ddd;
+    padding: 6px; /* Reduced padding for more compact rows */
+    text-align: left;
 }
 
 table th {
-    background-color: #f4f4f4;
-    border: 1px solid #ddd;
-    padding: 8px;
     font-weight: bold;
-}
-
-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
 }
 
 table td:first-child {
@@ -61,12 +62,11 @@ table td:first-child {
 
 #notes-section {
     font-size: 14px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    max-height: 250px;
-    overflow-y: auto;
-    margin-bottom: 10px;
+    max-height: 250px; /* Adjust to desired height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 10px; /* Space inside the panel */
+    background-color: #f9f9f9; /* Light background */
+    border: 1px solid #ddd; /* Add border for definition */
 }
 
 #notes-section h3 {
