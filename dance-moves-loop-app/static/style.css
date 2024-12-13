@@ -1,3 +1,4 @@
+/* Global Styles */
 body, html {
     margin: 0;
     height: 100%;
@@ -6,9 +7,10 @@ body, html {
 
 body {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
 }
 
+/* Left Panel (Navigation and Table) */
 #left-panel {
     flex: 0 0 24%;
     display: flex;
@@ -19,18 +21,25 @@ body {
     border-right: 1px solid #ddd;
 }
 
-#right-panel {
-    flex-grow: 1;
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-start;
-    padding: 0;
+/* Speed Control Section */
+#speed-control {
+    display: flex; /* Arrange label, slider, and indicator in a row */
+    align-items: center; /* Vertically align items */
+    gap: 10px; /* Spacing between label, slider, and display */
+    margin-top: 10px; /* Add spacing above the control section */
 }
 
-#player {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    max-height: calc(100vh - 50px);
+#speed-slider {
+    flex-grow: 1; /* Slider expands to take available horizontal space */
+}
+
+#speed-display {
+    min-width: 40px; /* Ensure consistent space for text like '1x' */
+    text-align: right; /* Align display text to the right */
+}
+
+.card {
+    background-color: #f9f9f9;
     border: 1px solid #ddd;
 }
 
@@ -60,6 +69,7 @@ table td:first-child {
     text-overflow: ellipsis;
 }
 
+/* Notes Section */
 #notes-section {
     font-size: 14px;
     max-height: 250px; /* Adjust to desired height */
@@ -72,4 +82,31 @@ table td:first-child {
 #notes-section h3 {
     font-size: 14px;
     font-weight: bold;
+}
+
+/* Right Panel (YouTube Player) */
+#right-panel {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+
+#player {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: calc(100vh - 50px);
+    border: 1px solid #ddd;
+}
+
+/* Utility Classes */
+.overflow-auto {
+    overflow: auto;
+}
+
+.text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

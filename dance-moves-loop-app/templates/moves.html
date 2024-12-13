@@ -9,102 +9,105 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="d-flex flex-column">
-    <div class="container-fluid d-flex flex-grow-1">
-        <!-- Left Panel -->
-        <div id="left-panel" class="col-3 overflow-auto border-end p-3">
-            <h1 class="fw-bold">Dance Moves</h1>
-            <div id="dance-style-buttons" class="d-flex gap-2 mb-3">
-                <a href="/salsa">
-                    <button class="btn {% if dance_type == 'Salsa' %}btn-primary active{% else %}btn-outline-primary{% endif %} w-100">Salsa</button>
-                </a>
-                <a href="/bachata">
-                    <button class="btn {% if dance_type == 'Bachata' %}btn-primary active{% else %}btn-outline-primary{% endif %} w-100">Bachata</button>
-                </a>
-                <a href="/swing">
-                    <button class="btn {% if dance_type == 'Swing' %}btn-primary active{% else %}btn-outline-primary{% endif %} w-100">Swing</button>
-                </a>
-            </div>
-            <div class="playlist-links">
-                {% for playlist in playlists %}
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Left Panel -->
+            <div id="left-panel" class="col-md-3 border-end p-3 overflow-auto">
+                <h1 class="fw-bold">Dance Moves</h1>
+                <!-- Dance Style Buttons -->
+                <div class="btn-group w-100 mb-3">
+                    <a href="/salsa" class="btn {% if dance_type == 'Salsa' %}btn-primary{% else %}btn-outline-primary{% endif %}">Salsa</a>
+                    <a href="/bachata" class="btn {% if dance_type == 'Bachata' %}btn-primary{% else %}btn-outline-primary{% endif %}">Bachata</a>
+                    <a href="/swing" class="btn {% if dance_type == 'Swing' %}btn-primary{% else %}btn-outline-primary{% endif %}">Swing</a>
+                </div>
+
+                <!-- Playlist Links -->
                 <div>
+                    {% for playlist in playlists %}
                     <a href="/{{ dance_type | lower }}/{{ playlist[0] }}" 
                        class="btn btn-light w-100 mb-2 {% if playlist[0] == playlist_name %}fw-bold{% endif %}">
                        {{ playlist[1] }}
                     </a>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+
+                <!-- Speed Control -->
+                <div id="speed-control" class="my-3">
+                    <label for="speed-slider" class="me-2">Speed:</label>
+                    <input 
+                        type="range" 
+                        id="speed-slider" 
+                        min="0.25" 
+                        max="2" 
+                        step="0.25" 
+                        value="1" 
+                        oninput="updateSpeed(this.value)"
+                    />
+                    <span id="speed-display" class="ms-2">1x</span>
+                </div>
+
+                <!-- Moves Table -->
+                <div id="moves-table-container" class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Move</th>
+                                <th>Loop</th>
+                                <th>Guide</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for move in moves %}
+                            <tr>
+                                <td title="{{ move['move_name'] }}" class="text-truncate" style="max-width: 150px;">{{ move['move_name'] }}</td>
+                                <td>
+                                    <button 
+                                        class="btn btn-primary btn-sm w-100"
+                                        onclick="loadVideo(
+                                            '{{ move['video_id'] }}', 
+                                            {{ move['loop_start'] }}, 
+                                            {{ move['loop_end'] }}, 
+                                            {{ move['loop_speed'] }}, 
+                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
+                                        )">
+                                        Loop
+                                    </button>
+                                </td>
+                                <td>
+                                    <button 
+                                        class="btn btn-secondary btn-sm w-100"
+                                        onclick="playGuide(
+                                            '{{ move['video_id'] }}', 
+                                            {{ move['guide_start'] }}, 
+                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
+                                        )">
+                                        Guide
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="card">
+                    <div class="card-header">Notes</div>
+                    <div class="card-body overflow-auto" style="max-height: 250px;">
+                        <p id="notes-content">Select a move to see the notes here.</p>
+                    </div>
+                </div>
             </div>
-            <div id="speed-control" class="d-flex align-items-center my-3">
-                <label for="speed-slider" class="me-2">Speed:</label>
-                <input 
-                    id="speed-slider" 
-                    class="form-range flex-grow-1" 
-                    type="range" 
-                    min="0.25" 
-                    max="2" 
-                    step="0.25" 
-                    value="1" 
-                    oninput="updateSpeed(this.value)" 
-                />
-                <span id="speed-display" class="ms-2">1x</span>
-            </div>                                
-            <div id="moves-table-container" class="mt-3">
-                <table class="table table-bordered table-striped">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Move</th>
-                            <th>Loop</th>
-                            <th>Guide</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for move in moves %}
-                        <tr>
-                            <td title="{{ move['move_name'] }}" class="text-truncate" style="max-width: 150px;">{{ move['move_name'] }}</td>
-                            <td>
-                                <button 
-                                    class="btn btn-primary btn-sm w-100"
-                                    onclick="loadVideo(
-                                        '{{ move['video_id'] }}', 
-                                        {{ move['loop_start'] }}, 
-                                        {{ move['loop_end'] }}, 
-                                        {{ move['loop_speed'] }}, 
-                                        '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
-                                    )">
-                                    Loop
-                                </button>
-                            </td>
-                            <td>
-                                <button 
-                                    class="btn btn-secondary btn-sm w-100"
-                                    onclick="playGuide(
-                                        '{{ move['video_id'] }}', 
-                                        {{ move['guide_start'] }}, 
-                                        '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
-                                    )">
-                                    Guide
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+            <!-- Right Panel -->
+            <div id="right-panel" class="col-md-9 d-flex justify-content-center align-items-center">
+                <div id="player" class="border" style="aspect-ratio: 4 / 3; width: 100%;"></div>
             </div>
-            <div id="notes-section" class="bg-light border p-2 mt-3" style="max-height: 250px; overflow-y: auto;">
-                <h3 class="fw-bold">Notes</h3>
-                <p id="notes-content">Select a move to see the notes here.</p>
-            </div>            
-        </div>
-        
-        <!-- Right Panel -->
-        <div id="right-panel" class="col-9 d-flex justify-content-end align-items-start p-3">
-            <div id="player" class="border"></div>
         </div>
     </div>
     <script>
         let player;
 
-        // Initialize YouTube Player
         function onYouTubeIframeAPIReady() {
             initializePlayer();
         }
@@ -124,9 +127,9 @@
         function updateSpeed(value) {
             const parsedSpeed = parseFloat(value);
             if (player) {
-                player.setPlaybackRate(parsedSpeed); // Update YouTube playback speed dynamically
+                player.setPlaybackRate(parsedSpeed);
             }
-            document.getElementById("speed-display").innerText = `${parsedSpeed}x`; // Update the speed display
+            document.getElementById("speed-display").innerText = `${parsedSpeed}x`;
         }
 
         function loadVideo(videoId, start, end, speed, notes) {
@@ -155,7 +158,7 @@
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED) {
                 const loopStart = player.getVideoStartBytes();
-                player.seekTo(loopStart); // Loop to the beginning of the loop range
+                player.seekTo(loopStart);
             }
         }
 
