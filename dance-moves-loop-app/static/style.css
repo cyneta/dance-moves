@@ -25,18 +25,21 @@ h1 {
 }
 
 #right-panel {
-    flex-grow: 1;
+    flex-grow: 1; /* Take up remaining space */
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
+    justify-content: flex-end; /* Align content to the right */
+    align-items: flex-start; /* Align the player to the top of the panel */
+    padding: 0; /* Remove padding to align with the viewport edge */
+    box-sizing: border-box;
     overflow: hidden;
-    padding: 0;
+    max-width: 100%; /* Ensure panel doesn't exceed viewport width */
 }
 
 #player {
     width: 100%;
+    max-width: 100%; /* Prevent overflow on mobile */    
     aspect-ratio: 4 / 3;
-    max-height: calc(100vh - 33px);
+    max-height: calc(100vh - 55px);
     border: 1px solid #ddd;
 }
 
@@ -160,33 +163,27 @@ h1 {
 /* Table */
 table {
     width: 100%;
+    max-width: 500px; /* Constrain the maximum width of the table */
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto; /* Allow column widths to adjust based on content */
 }
 
 table th, table td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
-    font-size: 14px; 
-}
-
-table th {
-    background-color: #f4f4f4;
-}
-
-table tr:hover {
-    background-color: #f9f9f9;
-}
-
-table th:first-child, table td:first-child {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 14px;
 }
 
 table th:nth-child(2), table td:nth-child(2),
 table th:nth-child(3), table td:nth-child(3) {
-    width: 22%;
-    white-space: nowrap;
+    white-space: nowrap; /* Prevents wrapping for the button text */
 }
+
+table th:first-child, table td:first-child {
+    max-width: 150px; /* Constrain the maximum width of the move names */
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden; /* Hide overflowed text */
+    text-overflow: ellipsis; /* Add ellipses for truncated text */
+}
+
