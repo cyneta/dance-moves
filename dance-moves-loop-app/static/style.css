@@ -67,6 +67,43 @@ h1 {
     font-weight: bold;
 }
 
+/* Speed Control */
+#speed-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+    padding: 0 10px;
+}
+
+#speed-control label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#speed-slider {
+    flex-grow: 1;
+    height: 6px;
+    border-radius: 5px;
+    background: #ddd;
+    outline: none;
+    cursor: pointer;
+}
+
+#speed-slider::-webkit-slider-thumb {
+    width: 12px;
+    height: 12px;
+    background: #007BFF;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#speed-display {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
 /* Playlist Links */
 .playlist-links {
     margin-bottom: 20px; /* Add space below playlist links to separate from the moves table */
