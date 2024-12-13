@@ -38,7 +38,7 @@
                 <tbody>
                     {% for move in moves %}
                     <tr>
-                        <td>{{ move['move_name'] }}</td>
+                        <td title="{{ move['move_name'] }}">{{ move['move_name'] }}</td>
                         <td>
                             <button 
                                 onclick="loadVideo(
@@ -187,12 +187,12 @@
             background-color: #f9f9f9;
             flex-shrink: 0;
             margin: 10px 0;
-            overflow-y:auto;
+            overflow-y: auto;
         }
 
         #notes-section h3 {
-            margin: 0px 0; /* Reduce spacing above and below the "Notes" header */
-            font-size: 16px; /* Adjust font size if necessary */
+            margin: 0px 0;
+            font-size: 16px;
         }        
 
         #right-panel {
@@ -210,12 +210,26 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            table-layout: fixed; /* Enforces fixed column widths */
+            max-width: 100%; /* Prevents horizontal scrolling */
+        }
+
+        table th:first-child, table td:first-child {
+/*            max-width: 100px; *//* Adjust to your preferred truncation width */
+            white-space: nowrap; /* Prevents wrapping */
+            overflow: hidden; /* Hides overflowed text */
+            text-overflow: ellipsis; /* Adds '...' for truncated text */
+        }
+
+        table th:nth-child(2), table td:nth-child(2),
+        table th:nth-child(3), table td:nth-child(3) {
+            width: 22%; /* Button columns are just wide enough */
+            white-space: nowrap; /* Prevents wrapping */
         }
 
         table th, table td {
             border: 1px solid #ddd;
-            padding: 8px; 
+            padding: 8px;
             text-align: left;
         }
 
