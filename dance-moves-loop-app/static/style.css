@@ -15,12 +15,15 @@ h1 {
 }
 
 #left-panel {
-    flex: 0 0 24%;
-    border-right: 1px solid #ccc;
+    flex: 0 0 24%; /* Maintain proportion */
+    display: flex;
+    flex-direction: column;
+    height: 97%; /* Ensure it respects the viewport */
+    max-height: 100%; /* Prevent overflow beyond viewport */
+    overflow-y: auto; /* Enable vertical scrolling */
     padding: 10px;
     box-sizing: border-box;
-    height: 100%;
-    overflow-y: auto;
+    border-right: 1px solid #ddd;
 }
 
 #right-panel {
@@ -74,8 +77,8 @@ h1 {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 15px 0;
-    padding: 0 10px;
+    margin: 10px 0; /* Reduce vertical spacing */
+    padding: 0 10px; /* Keep horizontal padding */
 }
 
 #speed-control label {
@@ -108,11 +111,12 @@ h1 {
 
 /* Playlist Links */
 .playlist-links {
-    margin-bottom: 20px; /* Add space below playlist links to separate from the moves table */
+    margin: 0; /* Reset any top and bottom margin */
+    padding: 0; /* Reset any padding */
 }
 
 .playlist-links div {
-    margin: 5px 0; /* Space between individual playlist buttons */
+    margin: 5px 0; /* Maintain spacing between individual links */
 }
 
 .playlist-links a {
@@ -134,26 +138,26 @@ h1 {
 
 /* Notes Section */
 #notes-section {
-    height: 200px;
+    font-size: 14px; /* Consistent font size */
     padding: 10px;
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     flex-shrink: 0;
     margin: 10px 0;
-    overflow-y: auto;
-    font-size: 14px;
-    line-height: 1.2; /* Tighter spacing for wrapped lines within a paragraph */
+    overflow-y: auto; /* Allow scrolling for long notes */
+}
+
+/* Notes Section Heading */
+#notes-section h3 {
+    font-size: 14px; /* Match table heading font size */
+    font-weight: bold; /* Match table heading font weight */
+    margin: 0 0 10px; /* Space below the heading */
 }
 
 .note-paragraph {
     margin-top: 6px; /* Reduced space between paragraphs */
     margin-bottom: 6px; /* Balanced space above and below paragraphs */
-}
-
-#notes-section h3 {
-    margin: 0;
-    font-size: 16px;
-}
+}    
 
 .extra-line-break {
     margin-top: 10px;

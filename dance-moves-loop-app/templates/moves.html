@@ -10,7 +10,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body class="d-flex flex-row">
-    <div id="left-panel" class="col-3 border-end p-3 d-flex flex-column">
+    <div id="left-panel" class="col-3 overflow-auto d-flex flex-column">
         <h1 class="h4 text-start">Dance Moves</h1>
 
         <div id="dance-style-buttons" class="btn-group mb-3">
@@ -35,9 +35,9 @@
             <span id="speed-display" class="ms-2">1.00x</span>
         </div>
 
-        <div id="moves-table-container" class="flex-grow-1 overflow-auto">
-            <table class="table table-sm table-hover">
-                <thead class="table-light">
+        <div id="moves-table-container" class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
                     <tr>
                         <th>Move</th>
                         <th>Loop</th>
@@ -47,9 +47,10 @@
                 <tbody>
                     {% for move in moves %}
                     <tr>
-                        <td title="{{ move['move_name'] }}">{{ move['move_name'] }}</td>
+                        <td class="text-truncate" title="{{ move['move_name'] }}">{{ move['move_name'] }}</td>
                         <td>
-                            <button class="btn btn-primary btn-sm"
+                            <button 
+                                class="btn btn-primary btn-sm"
                                 onclick="loadVideo(
                                     '{{ move['video_id'] }}', 
                                     {{ move['loop_start'] }}, 
@@ -61,7 +62,8 @@
                             </button>
                         </td>
                         <td>
-                            <button class="btn btn-secondary btn-sm"
+                            <button 
+                                class="btn btn-secondary btn-sm"
                                 onclick="playGuide(
                                     '{{ move['video_id'] }}', 
                                     {{ move['guide_start'] }}, 
@@ -75,7 +77,7 @@
                 </tbody>
             </table>
         </div>
-
+        
         <div id="notes-section" class="mt-3">
             <h3>Notes</h3>
             <p id="notes-content">Select a move to see the notes here.</p>
