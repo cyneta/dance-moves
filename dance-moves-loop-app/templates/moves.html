@@ -11,9 +11,15 @@
     <div id="left-panel">
         <h1>Dance Moves</h1>
         <div id="dance-style-buttons" class="left-aligned">
-            <a href="/salsa"><button>Salsa</button></a>
-            <a href="/bachata"><button>Bachata</button></a>
-            <a href="/swing"><button>Swing</button></a>
+            <a href="/salsa" class="{% if dance_type == 'Salsa' %}active{% endif %}">
+                <button>Salsa</button>
+            </a>
+            <a href="/bachata" class="{% if dance_type == 'Bachata' %}active{% endif %}">
+                <button>Bachata</button>
+            </a>
+            <a href="/swing" class="{% if dance_type == 'Swing' %}active{% endif %}">
+                <button>Swing</button>
+            </a>
         </div>
         <div class="playlist-links">
             {% for playlist in playlists %}
@@ -160,6 +166,10 @@
             font-size: 14px;
         }
 
+        #dance-style-buttons a.active button {
+            font-weight: bold;
+        }
+
         #dance-style-buttons button:hover {
             background-color: #0056b3;
         }
@@ -210,21 +220,20 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed; /* Enforces fixed column widths */
-            max-width: 100%; /* Prevents horizontal scrolling */
+            table-layout: fixed;
+            max-width: 100%;
         }
 
         table th:first-child, table td:first-child {
-/*            max-width: 100px; *//* Adjust to your preferred truncation width */
-            white-space: nowrap; /* Prevents wrapping */
-            overflow: hidden; /* Hides overflowed text */
-            text-overflow: ellipsis; /* Adds '...' for truncated text */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         table th:nth-child(2), table td:nth-child(2),
         table th:nth-child(3), table td:nth-child(3) {
-            width: 22%; /* Button columns are just wide enough */
-            white-space: nowrap; /* Prevents wrapping */
+            width: 22%;
+            white-space: nowrap;
         }
 
         table th, table td {

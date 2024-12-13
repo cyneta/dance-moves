@@ -1,8 +1,10 @@
 import os
 import re
 import logging
-from flask import Flask, render_template, redirect
+import requests
+import io
 import pandas as pd
+from flask import Flask, render_template, redirect
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -10,7 +12,17 @@ app = Flask(__name__)
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+def fetch_sheet_data(sheet_url):
+    """
+    Fetch data from a public Google Sheet in CSV format and return it as a DataFrame.
+    """
+    try:
+        response = requests.get(sheet_url)
+        response.raise_for_status()
+        return pd.read_csv(io.StringIO(response.text))
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error fetching the Google Sheet: {e}")
+        return pd.DataFrame()  # Return an empty DataFrame on error
 
 def time_to_seconds(time_value, default=None):
     """
@@ -42,11 +54,26 @@ def playlist(dance_type, playlist_name):
     """
     Display a playlist for a specific dance type.
     """
-    file_path = os.path.join(BASE_DIR, f'data/{dance_type}_moves.csv')
-    if not os.path.exists(file_path):
+
+    # Google Sheets CSV export URLs for each dance type
+    # This Googl Sheet is named "Dance Moves App Data"
+    sheet_urls = {
+        'salsa': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=886932256",
+        'bachata': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=232533163",
+        'swing': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=350828170",
+    }
+
+    # Get the correct sheet URL based on the dance type
+    sheet_url = sheet_urls.get(dance_type.lower())
+    if not sheet_url:
         return f"Dance type '{dance_type}' not supported!", 404
 
-    data = pd.read_csv(file_path)
+    # Fetch the data
+    data = fetch_sheet_data(sheet_url)
+
+    # Check if data is empty
+    if data.empty:
+        return f"No data available for dance type '{dance_type}'!", 500
 
     fixed_columns = [
         'move_name', 'move_type', 'source', 'video_id',
@@ -70,10 +97,10 @@ def playlist(dance_type, playlist_name):
     filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes available.")
 
     # Time conversions with default handling
-    filtered_moves['loop_start'] = filtered_moves['loop_start'].apply(lambda x: time_to_seconds(x, 0))  # Default to 0
-    filtered_moves['loop_end'] = filtered_moves['loop_end'].apply(lambda x: time_to_seconds(x, 10))  # Default to 10 seconds
-    filtered_moves['loop_speed'] = filtered_moves['loop_speed'].fillna(1).astype(float)  # Default to 1
-    filtered_moves['guide_start'] = filtered_moves['guide_start'].apply(lambda x: time_to_seconds(x, 0))  # Default to 0
+    filtered_moves['loop_start'] = filtered_moves['loop_start'].apply(lambda x: time_to_seconds(x, 0))
+    filtered_moves['loop_end'] = filtered_moves['loop_end'].apply(lambda x: time_to_seconds(x, 100))
+    filtered_moves['loop_speed'] = filtered_moves['loop_speed'].fillna(1).astype(float)
+    filtered_moves['guide_start'] = filtered_moves['guide_start'].apply(lambda x: time_to_seconds(x, 0))
 
     # Remove rows with critical missing fields
     filtered_moves = filtered_moves.dropna(subset=['move_name', 'video_id'])
