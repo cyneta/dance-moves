@@ -119,7 +119,15 @@
 
         function displayNotes(notes) {
             const notesContent = document.getElementById("notes-content");
-            notesContent.innerHTML = notes ? notes.replace(/  /g, "<br>") : "No notes available.";
+            if (notes) {
+                const formattedNotes = notes
+                    .split("  ")
+                    .map(paragraph => `<div class="note-paragraph">${paragraph.trim()}</div>`)
+                    .join("");
+                notesContent.innerHTML = formattedNotes;
+            } else {
+                notesContent.innerHTML = "No notes available.";
+            }
         }
 
         function onPlayerStateChange(event) {

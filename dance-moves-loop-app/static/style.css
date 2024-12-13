@@ -67,8 +67,12 @@ h1 {
 }
 
 /* Playlist Links */
+.playlist-links {
+    margin-bottom: 20px; /* Add space below playlist links to separate from the moves table */
+}
+
 .playlist-links div {
-    margin: 5px 0;
+    margin: 5px 0; /* Space between individual playlist buttons */
 }
 
 .playlist-links a {
@@ -90,14 +94,20 @@ h1 {
 
 /* Notes Section */
 #notes-section {
-    display: block;
-    font-size: 14px;
-    margin-top: 10px;
-    padding: 5px;
     height: 200px;
+    padding: 10px;
     border: 1px solid #ccc;
     background-color: #f9f9f9;
+    flex-shrink: 0;
+    margin: 10px 0;
     overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.2; /* Tighter spacing for wrapped lines within a paragraph */
+}
+
+.note-paragraph {
+    margin-top: 6px; /* Reduced space between paragraphs */
+    margin-bottom: 6px; /* Balanced space above and below paragraphs */
 }
 
 #notes-section h3 {
@@ -120,6 +130,7 @@ table th, table td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
+    font-size: 14px; 
 }
 
 table th {
