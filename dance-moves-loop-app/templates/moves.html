@@ -10,20 +10,20 @@
 </head>
 <body class="d-flex flex-column">
     <div class="container-fluid d-flex flex-grow-1">
-        
+        <!-- Left Panel -->
         <div id="left-panel" class="col-3 overflow-auto border-end p-3">
-            <h1>Dance Moves</h1>
+            <h1 class="fw-bold">Dance Moves</h1>
             <div id="dance-style-buttons" class="d-flex gap-2 mb-3">
-                <a href="/salsa" class="{% if dance_type == 'Salsa' %}active{% endif %}">
+                <a href="/salsa">
                     <button class="btn {% if dance_type == 'Salsa' %}btn-primary active{% else %}btn-outline-primary{% endif %} w-100">Salsa</button>
                 </a>
-                <a href="/bachata" class="{% if dance_type == 'Bachata' %}active{% endif %}">
+                <a href="/bachata">
                     <button class="btn {% if dance_type == 'Bachata' %}btn-primary active{% else %}btn-outline-primary{% endif %} w-100">Bachata</button>
                 </a>
-                <a href="/swing" class="{% if dance_type == 'Swing' %}active{% endif %}">
+                <a href="/swing">
                     <button class="btn {% if dance_type == 'Swing' %}btn-primary active{% else %}btn-outline-primary{% endif %} w-100">Swing</button>
                 </a>
-            </div>            
+            </div>
             <div class="playlist-links">
                 {% for playlist in playlists %}
                 <div>
@@ -38,15 +38,16 @@
                 <label for="speed-slider" class="me-2">Speed:</label>
                 <input 
                     id="speed-slider" 
+                    class="form-range flex-grow-1" 
                     type="range" 
                     min="0.25" 
                     max="2" 
                     step="0.25" 
                     value="1" 
-                    onchange="updateSpeed(this.value)"
+                    oninput="updateSpeed(this.value)" 
                 />
                 <span id="speed-display" class="ms-2">1x</span>
-            </div>
+            </div>                                
             <div id="moves-table-container" class="mt-3">
                 <table class="table table-bordered table-striped">
                     <thead class="table-light">
@@ -95,6 +96,7 @@
             </div>
         </div>
         
+        <!-- Right Panel -->
         <div id="right-panel" class="col-9 d-flex justify-content-end align-items-start p-3">
             <div id="player" class="border"></div>
         </div>
@@ -120,10 +122,11 @@
         }
 
         function updateSpeed(value) {
+            const parsedSpeed = parseFloat(value);
             if (player) {
-                player.setPlaybackRate(parseFloat(value));
-                document.getElementById("speed-display").innerText = `${value}x`;
+                player.setPlaybackRate(parsedSpeed); // Update YouTube playback speed dynamically
             }
+            document.getElementById("speed-display").innerText = `${parsedSpeed}x`; // Update the speed display
         }
 
         function loadVideo(videoId, start, end, speed, notes) {
@@ -151,7 +154,8 @@
 
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED) {
-                player.seekTo(0); // Loop to the beginning
+                const loopStart = player.getVideoStartBytes();
+                player.seekTo(loopStart); // Loop to the beginning of the loop range
             }
         }
 

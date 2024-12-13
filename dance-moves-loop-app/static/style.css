@@ -1,98 +1,75 @@
-/* General Layout */
 body, html {
     margin: 0;
-    height: 100%; /* Ensure the body takes the full viewport */
-    overflow: hidden; /* Prevent outer page scrolling */
+    height: 100%;
+    overflow: hidden;
 }
 
 body {
     display: flex;
-    flex-direction: row; /* Allow left-right layout */
+    flex-direction: row;
 }
 
 #left-panel {
-    flex: 0 0 24%; /* Maintain proportion */
+    flex: 0 0 24%;
     display: flex;
     flex-direction: column;
-    height: 100%; /* Ensure it respects the viewport */
-    max-height: 100%; /* Prevent overflow beyond viewport */
-    overflow-y: auto; /* Enable vertical scrolling */
+    height: 100%;
+    overflow-y: auto;
     padding: 10px;
-    box-sizing: border-box;
     border-right: 1px solid #ddd;
 }
 
 #right-panel {
-    flex-grow: 1; /* Take up remaining space */
+    flex-grow: 1;
     display: flex;
-    justify-content: flex-end; /* Align content to the right */
-    align-items: flex-start; /* Align the player to the top of the panel */
-    padding: 0; /* Remove padding to align with the viewport edge */
-    box-sizing: border-box;
-    overflow: hidden;
-    max-width: 100%; /* Ensure panel doesn't exceed viewport width */
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 0;
 }
 
 #player {
     width: 100%;
-    max-width: 100%; /* Prevent overflow on mobile */    
     aspect-ratio: 4 / 3;
-    max-height: calc(100vh - 55px);
+    max-height: calc(100vh - 50px);
     border: 1px solid #ddd;
 }
 
-/* Table Styles */
 table {
     width: 100%;
     max-width: 500px;
     border-collapse: collapse;
-    table-layout: auto;
 }
 
 table th {
-    background-color: #f4f4f4; /* Light grey background for heading row */
+    background-color: #f4f4f4;
     border: 1px solid #ddd;
     padding: 8px;
-    text-align: left;
-    font-size: 14px;
     font-weight: bold;
 }
 
 table td {
     border: 1px solid #ddd;
     padding: 8px;
-    text-align: left;
-    font-size: 14px;
 }
 
-/* First Column Styles */
-table th:first-child, table td:first-child {
-    font-size: 14px; /* Match the standard font size */
-    max-width: 150px; /* Constrain width */
-    white-space: nowrap; /* Prevent wrapping */
-    overflow: hidden; /* Hide overflowed text */
-    text-overflow: ellipsis; /* Add ellipses for truncated text */
+table td:first-child {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Button Column Styles */
-table th:nth-child(2), table td:nth-child(2),
-table th:nth-child(3), table td:nth-child(3) {
-    white-space: nowrap; /* Prevents wrapping for button text */
-}
-
-/* Notes Section */
 #notes-section {
-    font-size: 14px; /* Match standard font size */
+    font-size: 14px;
     padding: 10px;
     border: 1px solid #ccc;
     background-color: #f9f9f9;
-    max-height: 250px; /* Adjust this value to fit your layout */
-    overflow-y: auto; /* Enable vertical scrolling */
-    margin-bottom: 10px; /* Add spacing below */
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 10px;
 }
 
 #notes-section h3 {
-    font-size: 14px; /* Match table heading font size */
-    font-weight: bold; /* Match table heading font weight */
-    margin: 10; /* Remove extra margin */
+    font-size: 14px;
+    font-weight: bold;
 }
