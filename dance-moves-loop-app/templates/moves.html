@@ -52,7 +52,7 @@
                                     {{ move['loop_start'] }}, 
                                     {{ move['loop_end'] }}, 
                                     {{ move['loop_speed'] }}, 
-                                    '{{ move['notes'] | escape }}'
+                                    '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
                                 )">
                                 Loop
                             </button>
@@ -62,7 +62,7 @@
                                 onclick="playGuide(
                                     '{{ move['video_id'] }}', 
                                     {{ move['guide_start'] }}, 
-                                    '{{ move['notes'] | escape }}'
+                                    '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
                                 )">
                                 Guide
                             </button>
@@ -95,7 +95,14 @@
                     height: '100%',
                     width: '100%',
                     videoId: '',
-                    playerVars: { autoplay: 0, controls: 1 },
+                    playerVars: {
+                        autoplay: 0,         // Disable autoplay
+                        controls: 1,         // Show video controls
+                        modestbranding: 1,   // Disable YouTube logo branding
+                        rel: 0,              // Prevent showing related videos at the end
+                        disablekb: 0,        // Enable keyboard controls for the player
+                        fs: 1,               // Enable fullscreen button
+                    },
                     events: { onStateChange: onPlayerStateChange },
                 });
             }
