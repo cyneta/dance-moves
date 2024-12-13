@@ -1,24 +1,20 @@
 /* General Layout */
-body {
-    display: flex;
-    flex-direction: row;
+body, html {
     margin: 0;
-    font-family: Arial, sans-serif;
-    height: 100vh;
-    overflow: hidden;
+    height: 100%; /* Ensure the body takes the full viewport */
+    overflow: hidden; /* Prevent outer page scrolling */
 }
 
-h1 {
-    font-size: 24px;
-    margin: 20px 0;
-    color: #333;
+body {
+    display: flex;
+    flex-direction: row; /* Allow left-right layout */
 }
 
 #left-panel {
     flex: 0 0 24%; /* Maintain proportion */
     display: flex;
     flex-direction: column;
-    height: 97%; /* Ensure it respects the viewport */
+    height: 100%; /* Ensure it respects the viewport */
     max-height: 100%; /* Prevent overflow beyond viewport */
     overflow-y: auto; /* Enable vertical scrolling */
     padding: 10px;
@@ -45,148 +41,58 @@ h1 {
     border: 1px solid #ddd;
 }
 
-/* Buttons */
-#dance-style-buttons {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    justify-content: flex-start;
-}
-
-#dance-style-buttons button {
-    padding: 10px 20px;
-    border: none;
-    background-color: #007BFF;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-}
-
-#dance-style-buttons button:hover {
-    background-color: #0056b3;
-}
-
-#dance-style-buttons a.active button {
-    font-weight: bold;
-}
-
-/* Speed Control */
-#speed-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 0; /* Reduce vertical spacing */
-    padding: 0 10px; /* Keep horizontal padding */
-}
-
-#speed-control label {
-    font-size: 14px;
-    font-weight: bold;
-}
-
-#speed-slider {
-    flex-grow: 1;
-    height: 6px;
-    border-radius: 5px;
-    background: #ddd;
-    outline: none;
-    cursor: pointer;
-}
-
-#speed-slider::-webkit-slider-thumb {
-    width: 12px;
-    height: 12px;
-    background: #007BFF;
-    border-radius: 50%;
-    cursor: pointer;
-}
-
-#speed-display {
-    font-size: 14px;
-    font-weight: bold;
-    color: #333;
-}
-
-/* Playlist Links */
-.playlist-links {
-    margin: 0; /* Reset any top and bottom margin */
-    padding: 0; /* Reset any padding */
-}
-
-.playlist-links div {
-    margin: 5px 0; /* Maintain spacing between individual links */
-}
-
-.playlist-links a {
-    text-decoration: none;
-    color: #333;
-    font-size: 14px;
-    padding: 5px 10px;
-    display: block;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.playlist-links a:hover {
-    color: white;
-    background-color: #007BFF;
-}
-
-/* Notes Section */
-#notes-section {
-    font-size: 14px; /* Consistent font size */
-    padding: 10px;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    flex-shrink: 0;
-    margin: 10px 0;
-    overflow-y: auto; /* Allow scrolling for long notes */
-}
-
-/* Notes Section Heading */
-#notes-section h3 {
-    font-size: 14px; /* Match table heading font size */
-    font-weight: bold; /* Match table heading font weight */
-    margin: 0 0 10px; /* Space below the heading */
-}
-
-.note-paragraph {
-    margin-top: 6px; /* Reduced space between paragraphs */
-    margin-bottom: 6px; /* Balanced space above and below paragraphs */
-}    
-
-.extra-line-break {
-    margin-top: 10px;
-}
-
-/* Table */
+/* Table Styles */
 table {
     width: 100%;
-    max-width: 500px; /* Constrain the maximum width of the table */
+    max-width: 500px;
     border-collapse: collapse;
-    table-layout: auto; /* Allow column widths to adjust based on content */
+    table-layout: auto;
 }
 
-table th, table td {
+table th {
+    background-color: #f4f4f4; /* Light grey background for heading row */
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+table td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
     font-size: 14px;
 }
 
-table th:nth-child(2), table td:nth-child(2),
-table th:nth-child(3), table td:nth-child(3) {
-    white-space: nowrap; /* Prevents wrapping for the button text */
-}
-
+/* First Column Styles */
 table th:first-child, table td:first-child {
-    max-width: 150px; /* Constrain the maximum width of the move names */
+    font-size: 14px; /* Match the standard font size */
+    max-width: 150px; /* Constrain width */
     white-space: nowrap; /* Prevent wrapping */
     overflow: hidden; /* Hide overflowed text */
     text-overflow: ellipsis; /* Add ellipses for truncated text */
 }
 
+/* Button Column Styles */
+table th:nth-child(2), table td:nth-child(2),
+table th:nth-child(3), table td:nth-child(3) {
+    white-space: nowrap; /* Prevents wrapping for button text */
+}
+
+/* Notes Section */
+#notes-section {
+    font-size: 14px; /* Match standard font size */
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    max-height: 250px; /* Adjust this value to fit your layout */
+    overflow-y: auto; /* Enable vertical scrolling */
+    margin-bottom: 10px; /* Add spacing below */
+}
+
+#notes-section h3 {
+    font-size: 14px; /* Match table heading font size */
+    font-weight: bold; /* Match table heading font weight */
+    margin: 10; /* Remove extra margin */
+}
