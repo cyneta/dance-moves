@@ -14,7 +14,7 @@
     <h2>YouTube Video</h2>
     <div class="plyr__video-embed" id="youtube-player">
         <iframe
-            src="https://www.youtube.com/embed/yYri7s3RCWE?origin=*&modestbranding=1&rel=0"
+            src="https://www.youtube.com/embed/yYri7s3RCWE?origin=*&modestbranding=1&rel=0&playsinline=1"
             allowfullscreen
             allow="autoplay; encrypted-media">
         </iframe>
@@ -22,7 +22,7 @@
 
     <!-- Plyr Local Video -->
     <h2>Local Video</h2>
-    <video id="local-player" class="plyr" playsinline controls>
+    <video id="local-player" class="plyr" playsinline muted>
         <source src="static/videos/25 BEGINNER BACHATA MOVES YOU MUST KNOW!.mp4" type="video/mp4">
         Your browser does not support HTML5 video.
     </video>
@@ -33,11 +33,64 @@
         // Initialize Plyr for YouTube
         const youtubePlayer = new Plyr('#youtube-player', {
             controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+            youtube: {
+                rel: 0,
+                modestbranding: 1,
+                playsinline: true,
+            },
         });
+
+        youtubePlayer.on('ready', () => {
+            console.log('YouTube player is ready!');
+            youtubePlayer.muted = true; // Start muted to bypass autoplay restrictions
+            youtubePlayer.play().then(() => {
+                console.log('YouTube autoplay successful.');
+            }).catch(err => {
+                console.warn('YouTube autoplay failed:', err);
+            });
+        });
+
+        youtubePlayer.on('play', () => console.log('YouTube video is playing!'));
+        youtubePlayer.on('pause', () => console.log('YouTube video is paused.'));
+        youtubePlayer.on('ended', () => console.log('YouTube video has ended.'));
 
         // Initialize Plyr for Local Video
         const localPlayer = new Plyr('#local-player', {
             controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+        });
+
+        localPlayer.on('ready', () => {
+            console.log('Local player is ready!');
+            localPlayer.muted = true; // Start muted to bypass autoplay restrictions
+            localPlayer.play().then(() => {
+                console.log('Local autoplay successful.');
+            }).catch(err => {
+                console.warn('Local autoplay failed:', err);
+            });
+        });
+
+        localPlayer.on('play', () => console.log('Local video is playing!'));
+        localPlayer.on('pause', () => console.log('Local video is paused.'));
+        localPlayer.on('ended', () => console.log('Local video has ended.'));
+
+        // Function to set playback rate
+        function setPlaybackRate(rate) {
+            youtubePlayer.playbackRate = rate;
+            localPlayer.playbackRate = rate;
+            console.log(`Playback rate set to: ${rate}`);
+        }
+
+        // Function to seek in both players
+        function seekTo(seconds) {
+            youtubePlayer.currentTime = seconds;
+            localPlayer.currentTime = seconds;
+            console.log(`Seeked to: ${seconds} seconds`);
+        }
+
+        // Testing interactions
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => setPlaybackRate(1.5), 2000); // Adjust playback speed
+            setTimeout(() => seekTo(10), 4000); // Seek to 10 seconds
         });
     </script>
 </body>
