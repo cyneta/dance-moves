@@ -118,8 +118,22 @@
                     height: '100%',
                     width: '100%',
                     videoId: '',
-                    playerVars: { autoplay: 0, controls: 1 },
-                    events: { onStateChange: onPlayerStateChange },
+                    playerVars: {
+                        autoplay: 0,
+                        controls: 1,
+                        rel: 0, // Show related videos only from the same channel
+                        modestbranding: 1, // Minimize YouTube branding
+                        playsinline: 1, // Ensure inline playback on mobile
+                    },
+                    events: {
+                        onReady: function(event) {
+                            console.log('Player is ready');
+                        },
+                        onStateChange: onPlayerStateChange,
+                        onError: function(event) {
+                            console.error('YouTube Player Error:', event.data);
+                        }
+                    }
                 });
             }
         }
@@ -132,35 +146,63 @@
             document.getElementById("speed-display").innerText = `${parsedSpeed}x`;
         }
 
+        let loopStartTime = 0;
+        let loopEndTime = null;
+
         function loadVideo(videoId, start, end, speed, notes) {
             if (player) {
-                player.loadVideoById({ videoId, startSeconds: start, endSeconds: end });
+                loopStartTime = start; // Store the loop start time
+                loopEndTime = end; // Store the loop end time
+
+                // Load the video and set playback speed
+                player.loadVideoById({
+                    videoId,
+                    startSeconds: start,
+                    endSeconds: end
+                });
                 player.setPlaybackRate(speed);
             }
+
+            // Update speed slider and notes
             document.getElementById("speed-slider").value = speed;
             updateSpeed(speed);
             displayNotes(notes);
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                // Loop back to the start time
+                if (loopStartTime !== null) {
+                    player.seekTo(loopStartTime);
+                    player.playVideo();
+                }
+            } else if (event.data === YT.PlayerState.PLAYING && loopEndTime !== null) {
+                const checkLoopInterval = setInterval(() => {
+                    const currentTime = player.getCurrentTime();
+                    if (currentTime >= loopEndTime) {
+                        player.seekTo(loopStartTime);
+                    }
+                }, 500); // Check every 500ms
+
+                // Clear interval when the video pauses
+                player.addEventListener('onStateChange', (e) => {
+                    if (e.data === YT.PlayerState.PAUSED) clearInterval(checkLoopInterval);
+                });
+            }
         }
 
         function playGuide(videoId, guideStart, notes) {
             if (player) {
                 player.loadVideoById({ videoId, startSeconds: guideStart });
                 player.setPlaybackRate(1);
-            }
+            }    
             displayNotes(notes);
-        }
+        }    
 
         function displayNotes(notes) {
             const notesContent = document.getElementById("notes-content");
             notesContent.innerHTML = notes ? notes.replace(/  /g, "<br>") : "No notes available.";
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.ENDED) {
-                const loopStart = player.getVideoStartBytes();
-                player.seekTo(loopStart);
-            }
-        }
+        }    
 
         document.addEventListener("DOMContentLoaded", () => {
             initializePlayer();
