@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plyr YouTube Test</title>
+    <!-- Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
+</head>
+<body>
+    <h1>Test Plyr with YouTube</h1>
+
+    <!-- Plyr YouTube Video -->
+    <div class="plyr__video-embed" id="player">
+        <iframe
+            src="https://www.youtube.com/embed/yYri7s3RCWE?origin=*&modestbranding=1&rel=0"
+            allowfullscreen
+            allow="autoplay; encrypted-media">
+        </iframe>
+    </div>
+
+    <!-- Plyr JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
+    <script>
+        // Initialize Plyr for YouTube
+        const player = new Plyr('#player', {
+            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+        });
+
+        // Optional: Debugging events
+        player.on('play', () => console.log('Playing the video!'));
+        player.on('ended', () => console.log('Video has ended.'));
+    </script>
+</body>
+</html>
