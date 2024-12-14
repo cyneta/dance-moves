@@ -1,112 +1,39 @@
-/* Global Styles */
+/* General Layout */
 body, html {
     margin: 0;
     height: 100%;
-    overflow: hidden;
+    overflow: hidden; /* Prevent outer page scrolling */
 }
 
 body {
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Horizontal layout */
 }
 
-/* Left Panel (Navigation and Table) */
+/* Left Panel */
 #left-panel {
-    flex: 0 0 24%;
+    flex: 0 0 24%; /* Maintain panel width */
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow-y: auto;
+    overflow-y: auto; /* Allow vertical scrolling */
     padding: 10px;
     border-right: 1px solid #ddd;
 }
 
-/* Speed Control Section */
-#speed-control {
-    display: flex; /* Arrange label, slider, and indicator in a row */
-    align-items: center; /* Vertically align items */
-    gap: 10px; /* Spacing between label, slider, and display */
-    margin-top: 10px; /* Add spacing above the control section */
+/* Moves Table Container */
+#moves-table-container {
+    max-height: 50vh; /* Limit table height to half the viewport */
+    overflow-y: auto; /* Add vertical scroll for long tables */
 }
 
-#speed-slider {
-    flex-grow: 1; /* Slider expands to take available horizontal space */
-}
-
-#speed-display {
-    min-width: 40px; /* Ensure consistent space for text like '1x' */
-    text-align: right; /* Align display text to the right */
-}
-
-.card {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-}
-
-/* Table Styles */
-table {
-    width: 100%;
-    max-width: 500px;
-    border-collapse: collapse;
-    table-layout: auto;
-}
-
-table th, table td {
-    font-size: 14px; /* Adjusted to a slightly smaller size */
-    border: 1px solid #ddd;
-    padding: 6px; /* Reduced padding for more compact rows */
-    text-align: left;
-}
-
-table th {
-    font-weight: bold;
-}
-
-table td:first-child {
-    max-width: 150px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Notes Section */
-#notes-section {
-    font-size: 14px;
-    max-height: 250px; /* Adjust to desired height */
-    overflow-y: auto; /* Enable vertical scrolling */
-    padding: 10px; /* Space inside the panel */
-    background-color: #f9f9f9; /* Light background */
-    border: 1px solid #ddd; /* Add border for definition */
-}
-
-#notes-section h3 {
-    font-size: 14px;
-    font-weight: bold;
-}
-
-/* Right Panel (YouTube Player) */
+/* Player Alignment */
 #right-panel {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
+    padding: 10px;
 }
 
 #player {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    max-height: calc(100vh - 50px);
+    width: 100%; /* Fully occupy the parent container */
+    aspect-ratio: 4 / 3; /* Maintain the desired aspect ratio */
     border: 1px solid #ddd;
-}
-
-/* Utility Classes */
-.overflow-auto {
-    overflow: auto;
-}
-
-.text-truncate {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }

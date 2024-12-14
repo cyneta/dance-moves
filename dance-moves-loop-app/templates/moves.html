@@ -46,7 +46,7 @@
                     <span id="speed-display" class="ms-2">1x</span>
                 </div>
 
-                <!-- Moves Table -->
+<!-- Moves Table -->
                 <div id="moves-table-container" class="table-responsive">
                     <table class="table table-bordered table-striped table-hover">
                         <thead class="table-light">
@@ -100,8 +100,8 @@
             </div>
 
             <!-- Right Panel -->
-            <div id="right-panel" class="col-md-9 d-flex justify-content-center align-items-center">
-                <div id="player" class="border" style="aspect-ratio: 4 / 3; width: 100%;"></div>
+            <div id="right-panel" class="col-md-9 d-flex justify-content-center align-items-start">
+                <div id="player" class="w-100" style="aspect-ratio: 4 / 3; max-width: 2000px; border: 1px solid #ddd;"></div>
             </div>
         </div>
     </div>
@@ -119,11 +119,12 @@
                     width: '100%',
                     videoId: '',
                     playerVars: {
+                        rel: 0,            // Prevent showing related videos
+                        modestbranding: 1,
+                        playsinline: 1,    // Ensures videos play inline on mobile devices
                         autoplay: 0,
                         controls: 1,
-                        rel: 0, // Show related videos only from the same channel
-                        modestbranding: 1, // Minimize YouTube branding
-                        playsinline: 1, // Ensure inline playback on mobile
+                        enablejsapi: 1     // Required for JS-based playback control
                     },
                     events: {
                         onReady: function(event) {
