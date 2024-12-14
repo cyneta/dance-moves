@@ -6,6 +6,7 @@
     <title>Plyr YouTube and Local Test</title>
     <!-- Plyr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
     <h1>Test Plyr with YouTube and Local Videos</h1>
@@ -30,50 +31,76 @@
     <!-- Plyr JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
     <script>
-        // Initialize Plyr for YouTube
-        const youtubePlayer = new Plyr('#youtube-player', {
-            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
-        });
+        const YT_STATES = {
+            '-1': 'Unstarted',
+            '0': 'Ended',
+            '1': 'Playing',
+            '2': 'Paused',
+            '3': 'Buffering',
+            '5': 'Video Cued',
+        };
 
-        // Initialize Plyr for Local Video
-        const localPlayer = new Plyr('#local-player', {
-            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
-        });
+        class UnifiedPlayer {
+            constructor(playerType, elementSelector, isYouTube = false) {
+                this.playerType = playerType;
+                this.isYouTube = isYouTube;
 
-        // Helper Function to Autoplay and Unmute
-        function autoplayAndUnmute(player, playerType, isYouTube = false) {
-            console.log(`${playerType} player is ready!`);
+                // Initialize the player
+                if (isYouTube) {
+                    this.player = new Plyr(elementSelector, {
+                        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+                    });
+                    this._attachYouTubeEvents();
+                } else {
+                    this.player = new Plyr(elementSelector, {
+                        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+                    });
+                    this._attachLocalEvents();
+                }
+            }
 
-            player.muted = true; // Start muted
-            player.play();
-                // .then(() => {
-                //     console.log(`${playerType} autoplay successful.`);
-                //     setTimeout(() => {
-                //         console.log(`${playerType} attempting to unmute.`);
-                //         if (isYouTube) {
-                //             player.muted = false;
-                //             console.log(`${playerType} unmuted.`);
-                //         } else {
-                //             player.muted = false;
-                //             console.log(`${playerType} unmuted.`);
-                //         }
-                //     }, 5000); // Wait 5 seconds before unmuting
-                // })
-                // .catch((error) => {
-                //     console.error(`${playerType} autoplay failed:`, error);
-                // });
+            play() {
+                this.player.muted = true; // Start muted
+                this.player.play();
+            }
 
-            // Add playback state listeners
-            player.on('play', () => console.log(`${playerType} video is playing!`));
-            player.on('pause', () => console.log(`${playerType} video is paused!`));
-            player.on('ended', () => console.log(`${playerType} video has ended.`));
+            _attachLocalEvents() {
+                this.player.on('ready', () => {
+                    console.log(`${this.playerType} player is ready!`);
+                    this.play(); // Start playing
+                });
+
+                this.player.on('play', () => console.log(`${this.playerType} video is playing!`));
+                this.player.on('pause', () => console.log(`${this.playerType} video is paused!`));
+                this.player.on('ended', () => console.log(`${this.playerType} video has ended.`));
+            }
+
+            _attachYouTubeEvents() {
+                this.player.on('ready', () => {
+                    console.log(`${this.playerType} player is ready!`);
+                    this.play(); // Start playing
+                });
+
+                this.player.on('statechange', (event) => {
+                    const stateCode = event.detail?.code;
+                    const stateName = YT_STATES[stateCode] || `Unknown (${stateCode})`;
+                    console.log(`${this.playerType} Player Event: ${stateName} (${stateCode})`);
+                });
+
+                this.player.on('play', () => console.log(`${this.playerType} video is playing!`));
+                this.player.on('pause', () => console.log(`${this.playerType} video is paused!`));
+                this.player.on('ended', () => console.log(`${this.playerType} video has ended.`));
+            }
         }
 
-        // Autoplay YouTube Video
-        youtubePlayer.on('ready', () => autoplayAndUnmute(youtubePlayer, 'YouTube', true));
+        // Global function required by the YouTube IFrame API
+        function onYouTubeIframeAPIReady() {
+            console.log('YouTube IFrame API is ready!');
 
-        // Autoplay Local Video
-        localPlayer.on('ready', () => autoplayAndUnmute(localPlayer, 'Local'));
-    </script>
+            // Initialize Unified Players
+            const youtubePlayer = new UnifiedPlayer('YouTube', '#youtube-player', true);
+            const localPlayer = new UnifiedPlayer('Local', '#local-player');
+        }
+    </script>    
 </body>
 </html>
