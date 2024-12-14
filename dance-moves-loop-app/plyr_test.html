@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plyr YouTube Test</title>
+    <title>Plyr YouTube and Local Test</title>
     <!-- Plyr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
 </head>
 <body>
-    <h1>Test Plyr with YouTube</h1>
+    <h1>Test Plyr with YouTube and Local Videos</h1>
 
     <!-- Plyr YouTube Video -->
-    <div class="plyr__video-embed" id="player">
+    <h2>YouTube Video</h2>
+    <div class="plyr__video-embed" id="youtube-player">
         <iframe
             src="https://www.youtube.com/embed/yYri7s3RCWE?origin=*&modestbranding=1&rel=0"
             allowfullscreen
@@ -19,17 +20,25 @@
         </iframe>
     </div>
 
+    <!-- Plyr Local Video -->
+    <h2>Local Video</h2>
+    <video id="local-player" class="plyr" playsinline controls>
+        <source src="static/videos/25 BEGINNER BACHATA MOVES YOU MUST KNOW!.mp4" type="video/mp4">
+        Your browser does not support HTML5 video.
+    </video>
+
     <!-- Plyr JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
     <script>
         // Initialize Plyr for YouTube
-        const player = new Plyr('#player', {
+        const youtubePlayer = new Plyr('#youtube-player', {
             controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
         });
 
-        // Optional: Debugging events
-        player.on('play', () => console.log('Playing the video!'));
-        player.on('ended', () => console.log('Video has ended.'));
+        // Initialize Plyr for Local Video
+        const localPlayer = new Plyr('#local-player', {
+            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+        });
     </script>
 </body>
 </html>
