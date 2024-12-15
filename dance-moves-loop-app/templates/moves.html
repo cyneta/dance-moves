@@ -137,67 +137,65 @@
             console.log(`Speed set to closest value: ${closestSpeed}`);
         }
 
-        function loadVideo(videoFilename, start, end, speed, notes) {
-            const videoSrc = `/static/videos/${videoFilename}`;
-            console.log(`Loading video: ${videoSrc}, Start: ${start}, End: ${end}, Speed: ${speed}`);
+	function loadVideo(videoFilename, start, end, speed, notes) {
+	    const videoSrc = `/static/videos/${videoFilename}`;
+	    console.log(`Loading video: ${videoSrc}, Start: ${start}, End: ${end}, Speed: ${speed}`);
 
-            // Avoid resetting source if already loaded
-            if (player.source?.sources?.[0]?.src === videoSrc) {
-                console.log('Source unchanged, skipping reload.');
-                applyStartTimeAndLoop(start, end, notes, speed);
-                return;
-            }
+	    if (player.source?.sources?.[0]?.src === videoSrc) {
+	        console.log('Source unchanged, skipping reload.');
+	        seekToStart(start);
+	        applyLooping(end, notes, speed);
+	        return;
+	    }
 
-            player.source = {
-                type: 'video',
-                sources: [{ src: videoSrc, type: 'video/mp4' }]
-            };
+	    player.source = {
+	        type: 'video',
+	        sources: [{ src: videoSrc, type: 'video/mp4' }]
+	    };
 
-            player.once('loadeddata', () => {
-                console.log('Video loaded. Setting start time...');
-                applyStartTimeAndLoop(start, end, notes, speed);
-            });
+	    player.once('loadedmetadata', () => {
+	        console.log('Metadata loaded. Attempting to seek...');
+	        seekToStart(start);
+	        applyLooping(end, notes, speed);
+	    });
 
-            player.on('error', (error) => {
-                console.error('Player encountered an error:', error);
-            });
-        }
+	    player.on('error', (error) => {
+	        console.error('Player encountered an error:', error);
+	    });
+	}
 
-        function applyStartTimeAndLoop(start, end, notes, speed) {
-            player.currentTime = start;
-            console.log(`Attempted to set start time to: ${start}`);
+	function seekToStart(start) {
+	    player.currentTime = start;
 
-            setTimeout(() => {
-                if (player.currentTime !== start) {
-                    console.warn('Start time mismatch. Retrying...');
-                    player.currentTime = start;
-                }
+	    player.once('seeked', () => {
+	        console.log(`Successfully sought to: ${player.currentTime}`);
+	        player.play().catch(error => {
+	            console.error('Error starting playback:', error);
+	        });
+	    });
 
-                player.play().then(() => {
-                    console.log(`Playback started at: ${player.currentTime}`);
-                }).catch(error => {
-                    console.error('Error starting playback:', error);
-                });
+	    setTimeout(() => {
+	        if (Math.abs(player.currentTime - start) > 0.1) {
+	            console.warn(`Seek retry: Current time is ${player.currentTime}, expected ${start}`);
+	            seekToStart(start); // Retry
+	        }
+	    }, 200);
+	}
 
-                // Handle looping
-                player.off('timeupdate'); // Remove any previous listeners
-                player.on('timeupdate', () => {
-                    if (player.currentTime >= end) {
-                        console.log(`Looping back to start: ${start}`);
-                        player.currentTime = start;
-                        player.play().catch(error => {
-                            console.error('Error resuming playback in loop:', error);
-                        });
-                    }
-                });
+	function applyLooping(end, notes, speed) {
+	    // Set up looping
+	    player.off('timeupdate'); // Clear previous listeners
+	    player.on('timeupdate', () => {
+	        if (player.currentTime >= end) {
+	            console.log(`Looping back to start`);
+	            seekToStart(start);
+	        }
+	    });
 
-                // Display notes
-                document.getElementById('notes-content').innerText = notes;
-
-                // Update speed slider and display
-                setPlayerSpeed(speed);
-            }, 100); // Allow time for seeking
-        }
+	    // Display notes and update speed
+	    document.getElementById('notes-content').innerText = notes;
+	    setPlayerSpeed(speed);
+	}
 
         function updateSpeed(value) {
             const speed = speeds[parseInt(value, 10)];

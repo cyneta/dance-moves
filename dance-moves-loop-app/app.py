@@ -4,7 +4,8 @@ import logging
 import requests
 import io
 import pandas as pd
-from flask import Flask, render_template, redirect
+from flask import Flask, send_from_directory, render_template, request
+from urllib.parse import unquote
 
 # Adjust pandas display options for debugging
 pd.set_option('display.max_columns', None)
@@ -15,8 +16,8 @@ pd.set_option('display.width', 1000)
 # Initialize Flask app
 app = Flask(
     __name__,
-    static_folder="static/videos",  # Relative path
-    static_url_path="/static/videos"  # URL path for serving
+    static_folder="static",  # Serve all static files from the default static folder
+    static_url_path="/static"  # Maintain the default URL path
 )
 
 # Set up logging
@@ -57,6 +58,16 @@ def home():
     Redirect to the default dance type (Salsa).
     """
     return redirect('/salsa')
+
+@app.route('/static/videos/<path:filename>')
+def serve_video(filename):
+    decoded_filename = unquote(filename)  # Decode URL-encoded characters
+    print(f"Attempting to serve file: {decoded_filename}")
+    try:
+        return send_from_directory("static/videos", decoded_filename)
+    except FileNotFoundError:
+        print(f"File not found: {decoded_filename}")
+        return "File not found", 404
 
 @app.route('/<dance_type>/', defaults={'playlist_name': None})
 @app.route('/<dance_type>/<playlist_name>')
