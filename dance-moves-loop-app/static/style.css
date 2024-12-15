@@ -7,7 +7,7 @@ body, html {
 
 body {
     display: flex;
-    flex-direction: row; /* Horizontal layout */
+    flex-direction: column; /* Allow natural flow */
 }
 
 /* Left Panel */
@@ -27,13 +27,20 @@ body {
     overflow-y: auto; /* Add vertical scroll for long tables */
 }
 
-/* Player Alignment */
+/* Right Panel */
 #right-panel {
     padding: 10px;
+    height: 100vh; /* Ensure it takes full height */
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
 }
 
+/* Player Alignment */
 #player {
-    width: 100%; /* Fully occupy the parent container */
-    aspect-ratio: 4 / 3; /* Maintain the desired aspect ratio */
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
     border: 1px solid #ddd;
+    background-color: #000;
 }
