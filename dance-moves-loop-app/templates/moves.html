@@ -64,7 +64,7 @@
                                     <button 
                                         class="btn btn-primary btn-sm w-100"
                                         onclick="loadVideo(
-                                            '{{ move['video_id'] }}', 
+                                            '{{ move['video_filename'] }}', 
                                             {{ move['loop_start'] }}, 
                                             {{ move['loop_end'] }}, 
                                             {{ move['loop_speed'] }}, 
@@ -77,7 +77,7 @@
                                     <button 
                                         class="btn btn-secondary btn-sm w-100"
                                         onclick="playGuide(
-                                            '{{ move['video_id'] }}', 
+                                            '{{ move['video_filename'] }}', 
                                             {{ move['guide_start'] }}, 
                                             '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
                                         )">
@@ -101,9 +101,13 @@
 
             <!-- Right Panel -->
             <div id="right-panel" class="col-md-9">
-                <video id="player" class="plyr" playsinline controls>
-                    <source src="" type="video/mp4">
-                </video>
+                {% if first_move and first_move.video_filename %}
+                    <video id="player" class="plyr" playsinline controls>
+                        <source src="/static/videos/{{ first_move.video_filename }}" type="video/mp4">
+                    </video>
+                {% else %}
+                    <p>No video available for the selected move.</p>
+                {% endif %}
             </div>
         </div>
     </div>
