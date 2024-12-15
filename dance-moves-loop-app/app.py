@@ -13,7 +13,11 @@ pd.set_option('display.max_colwidth', None)
 pd.set_option('display.width', 1000)
 
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder="static/videos",  # Relative path
+    static_url_path="/static/videos"  # URL path for serving
+)
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
