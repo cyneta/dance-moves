@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plyr Test with Advanced Controls</title>
+    <title>Plyr Test with Local Videos</title>
     <!-- Plyr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
     <style>
@@ -14,17 +14,9 @@
             background-color: #000;
         }
 
-        .video-wrapper {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #player {
             width: 100%;
             height: 100%;
-            display: none;
-        }
-
-        .video-wrapper.active {
-            display: block;
         }
 
         .controls {
@@ -43,28 +35,14 @@
     </style>
 </head>
 <body>
-    <h1>Test Plyr with Overlapping Players</h1>
+    <h1>Test Plyr with Local Video Playback</h1>
 
     <!-- Video Container -->
     <div class="video-container">
-        <!-- YouTube Video -->
-        <div id="youtube-wrapper" class="video-wrapper">
-            <div id="youtube-player" class="plyr__video-embed">
-                <iframe
-                    src="https://www.youtube.com/embed/yYri7s3RCWE?enablejsapi=1&modestbranding=1&rel=0&playsinline=1"
-                    allowfullscreen
-                    allow="autoplay; encrypted-media">
-                </iframe>
-            </div>
-        </div>
-
-        <!-- Local Video -->
-        <div id="local-wrapper" class="video-wrapper">
-            <video id="local-player" class="plyr" playsinline controls>
-                <source src="static/videos/25%20BEGINNER%20BACHATA%20MOVES%20YOU%20MUST%20KNOW!.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        </div>
+        <video id="player" class="plyr" playsinline controls>
+            <source src="static/videos/25%20BEGINNER%20BACHATA%20MOVES%20YOU%20MUST%20KNOW!.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
     </div>
 
     <!-- Controls Panel -->
@@ -72,7 +50,7 @@
         <!-- Playback Speed -->
         <div class="controls-group">
             <label for="speed-slider">Playback Speed:</label>
-            <input type="range" id="speed-slider" min="0" max="6" step="1" value="3">
+            <input type="range" id="speed-slider" min="0" max="9" step="1" value="6">
             <span id="speed-display">1x</span>
         </div>
 
@@ -92,77 +70,56 @@
         </div>
 
         <!-- Loop and Pause Buttons -->
-        <button id="set-loop">Loop</button>
+        <button id="set-loop">Set Loop</button>
         <button id="pause-video">Pause</button>
-        <button id="play-youtube">Play YouTube Video</button>
-        <button id="play-local">Play Local Video</button>
     </div>
 
     <!-- Plyr JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const youtubePlayer = new Plyr('#youtube-player');
-            const localPlayer = new Plyr('#local-player');
-            let activePlayer = localPlayer; // Default active player
+            const speeds = [0.25, 0.32, 0.4, 0.5, 0.63, 0.8, 1, 1.26, 1.58, 2];
+            const player = new Plyr('#player');
+            let loopInterval;
 
-            // Helper function to switch active player
-            function switchPlayer(targetPlayer, targetWrapper, inactivePlayer) {
-                // Pause inactive player
-                inactivePlayer.pause();
-
-                // Hide all wrappers and show the target wrapper
-                document.querySelectorAll('.video-wrapper').forEach(wrapper => wrapper.classList.remove('active'));
-                targetWrapper.classList.add('active');
-
-                // Set the target player as active
-                activePlayer = targetPlayer;
-
-                console.log(`Switched to active player: ${targetPlayer}`);
-            }
-
-            // Attach event listeners to buttons
-            document.getElementById('play-youtube').addEventListener('click', () => {
-                switchPlayer(youtubePlayer, document.getElementById('youtube-wrapper'), localPlayer);
+            // Set up speed control
+            document.getElementById('speed-slider').addEventListener('input', (event) => {
+                const index = parseInt(event.target.value, 10);
+                const speed = speeds[index];
+                player.speed = speed;
+                document.getElementById('speed-display').innerText = `${speed}x`;
             });
 
-            document.getElementById('play-local').addEventListener('click', () => {
-                switchPlayer(localPlayer, document.getElementById('local-wrapper'), youtubePlayer);
+            // Set up volume control
+            document.getElementById('volume-slider').addEventListener('input', (event) => {
+                const volume = parseFloat(event.target.value);
+                player.volume = volume;
+                document.getElementById('volume-display').innerText = `${Math.round(volume * 100)}%`;
             });
 
+            // Set up loop functionality
             document.getElementById('set-loop').addEventListener('click', () => {
                 const start = parseFloat(document.getElementById('loop-start').value);
                 const end = parseFloat(document.getElementById('loop-end').value);
 
-                activePlayer.currentTime = start;
-                activePlayer.play();
+                player.currentTime = start;
+                player.play();
 
-                let loopInterval = setInterval(() => {
-                    if (activePlayer.currentTime >= end) {
-                        activePlayer.currentTime = start;
-                        activePlayer.play();
+                clearInterval(loopInterval); // Clear previous loop if it exists
+                loopInterval = setInterval(() => {
+                    if (player.currentTime >= end) {
+                        player.currentTime = start;
+                        player.play();
                     }
                 }, 500);
 
-                // Clear loop on pause
-                activePlayer.on('pause', () => clearInterval(loopInterval));
+                // Stop looping when paused
+                player.on('pause', () => clearInterval(loopInterval));
             });
 
+            // Pause video
             document.getElementById('pause-video').addEventListener('click', () => {
-                activePlayer.pause();
-            });
-
-            document.getElementById('speed-slider').addEventListener('input', (event) => {
-                const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
-                const speed = speeds[parseInt(event.target.value)];
-                activePlayer.speed = speed;
-                document.getElementById('speed-display').innerText = `${speed}x`;
-            });
-
-            document.getElementById('volume-slider').addEventListener('input', (event) => {
-                const volume = parseFloat(event.target.value);
-                activePlayer.volume = volume;
-                document.getElementById('volume-display').innerText = `${Math.round(volume * 100)}%`;
+                player.pause();
             });
         });
     </script>
