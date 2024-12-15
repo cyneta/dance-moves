@@ -6,23 +6,25 @@
     <title>Plyr Test with Advanced Controls</title>
     <!-- Plyr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
-    <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         .video-container {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 20px;
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
         }
 
         .video-wrapper {
-            flex: 1;
-            max-width: 50%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
         }
 
-        .video-wrapper iframe, .video-wrapper video {
-            width: 100%;
-            aspect-ratio: 16 / 9;
+        .video-wrapper.active {
+            display: block;
         }
 
         .controls {
@@ -41,14 +43,13 @@
     </style>
 </head>
 <body>
-    <h1>Test Plyr with YouTube and Local Videos</h1>
+    <h1>Test Plyr with Overlapping Players</h1>
 
-    <!-- Video Players Side by Side -->
+    <!-- Video Container -->
     <div class="video-container">
-        <!-- Plyr YouTube Video -->
-        <div class="video-wrapper">
-            <h2>YouTube Video</h2>
-            <div class="plyr__video-embed" id="youtube-player">
+        <!-- YouTube Video -->
+        <div id="youtube-wrapper" class="video-wrapper">
+            <div id="youtube-player" class="plyr__video-embed">
                 <iframe
                     src="https://www.youtube.com/embed/yYri7s3RCWE?enablejsapi=1&modestbranding=1&rel=0&playsinline=1"
                     allowfullscreen
@@ -57,12 +58,11 @@
             </div>
         </div>
 
-        <!-- Plyr Local Video -->
-        <div class="video-wrapper">
-            <h2>Local Video</h2>
+        <!-- Local Video -->
+        <div id="local-wrapper" class="video-wrapper">
             <video id="local-player" class="plyr" playsinline controls>
                 <source src="static/videos/25%20BEGINNER%20BACHATA%20MOVES%20YOU%20MUST%20KNOW!.mp4" type="video/mp4">
-                Your browser does not support HTML5 video.
+                Your browser does not support the video tag.
             </video>
         </div>
     </div>
@@ -94,137 +94,75 @@
         <!-- Loop and Pause Buttons -->
         <button id="set-loop">Loop</button>
         <button id="pause-video">Pause</button>
+        <button id="play-youtube">Play YouTube Video</button>
+        <button id="play-local">Play Local Video</button>
     </div>
 
     <!-- Plyr JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
     <script>
-        const YT_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
-
-        class UnifiedPlayer {
-            constructor(playerType, elementSelector, isYouTube = false) {
-                this.playerType = playerType;
-                this.isYouTube = isYouTube;
-
-                // Initialize player
-                this.player = new Plyr(elementSelector, {
-                    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
-                });
-
-                if (isYouTube) {
-                    this._attachYouTubeEvents();
-                } else {
-                    this._attachLocalEvents();
-                }
-
-                // Loop properties
-                this.loopStart = 0;
-                this.loopEnd = null;
-                this.loopInterval = null;
-            }
-
-            play() {
-                this.player.play();
-            }
-
-            pause() {
-                this.player.pause();
-            }
-
-            setSpeed(speed) {
-                if (this.isYouTube) {
-                    if (this.player.embed) {
-                        this.player.embed.setPlaybackRate(speed); // YouTube-specific speed control
-                        console.log(`${this.playerType} speed set to ${speed}x`);
-                    } else {
-                        console.warn(`${this.playerType} speed change failed: embed not ready.`);
-                    }
-                } else {
-                    this.player.speed = speed;
-                    console.log(`${this.playerType} speed set to ${speed}x`);
-                }
-            }
-
-            setVolume(volume) {
-                this.player.volume = volume;
-                console.log(`${this.playerType} volume set to ${Math.round(volume * 100)}%`);
-            }
-
-            setLoop(start, end, speed, volume) {
-                this.loopStart = start;
-                this.loopEnd = end;
-
-                console.log(`${this.playerType} Loop set: Start=${start}, End=${end}, Speed=${speed}, Volume=${volume}`);
-
-                // Apply settings
-                this.player.currentTime = start;
-                this.setSpeed(speed);
-                this.setVolume(volume);
-
-                this.player.play();
-
-                if (this.loopInterval) {
-                    clearInterval(this.loopInterval);
-                }
-
-                this.loopInterval = setInterval(() => {
-                    if (this.player.currentTime >= this.loopEnd) {
-                        this.player.currentTime = this.loopStart;
-                        this.player.play();
-                    }
-                }, 500);
-            }
-
-            _attachLocalEvents() {
-                this.player.on('ready', () => console.log(`${this.playerType} player is ready!`));
-                this.player.on('play', () => console.log(`${this.playerType} video is playing!`));
-                this.player.on('pause', () => console.log(`${this.playerType} video is paused!`));
-                this.player.on('ended', () => console.log(`${this.playerType} video has ended.`));
-            }
-
-            _attachYouTubeEvents() {
-                this.player.on('ready', () => console.log(`${this.playerType} player is ready!`));
-                this.player.on('play', () => console.log(`${this.playerType} video is playing!`));
-                this.player.on('pause', () => console.log(`${this.playerType} video is paused!`));
-                this.player.on('ended', () => console.log(`${this.playerType} video has ended.`));
-            }
-        }
-
-        // Initialize Players
         document.addEventListener('DOMContentLoaded', () => {
-            const youtubePlayer = new UnifiedPlayer('YouTube', '#youtube-player', true);
-            const localPlayer = new UnifiedPlayer('Local', '#local-player');
+            const youtubePlayer = new Plyr('#youtube-player');
+            const localPlayer = new Plyr('#local-player');
+            let activePlayer = localPlayer; // Default active player
 
-            // Hook up controls
+            // Helper function to switch active player
+            function switchPlayer(targetPlayer, targetWrapper, inactivePlayer) {
+                // Pause inactive player
+                inactivePlayer.pause();
+
+                // Hide all wrappers and show the target wrapper
+                document.querySelectorAll('.video-wrapper').forEach(wrapper => wrapper.classList.remove('active'));
+                targetWrapper.classList.add('active');
+
+                // Set the target player as active
+                activePlayer = targetPlayer;
+
+                console.log(`Switched to active player: ${targetPlayer}`);
+            }
+
+            // Attach event listeners to buttons
+            document.getElementById('play-youtube').addEventListener('click', () => {
+                switchPlayer(youtubePlayer, document.getElementById('youtube-wrapper'), localPlayer);
+            });
+
+            document.getElementById('play-local').addEventListener('click', () => {
+                switchPlayer(localPlayer, document.getElementById('local-wrapper'), youtubePlayer);
+            });
+
             document.getElementById('set-loop').addEventListener('click', () => {
                 const start = parseFloat(document.getElementById('loop-start').value);
                 const end = parseFloat(document.getElementById('loop-end').value);
-                const speedIndex = parseInt(document.getElementById('speed-slider').value);
-                const speed = YT_SPEEDS[speedIndex];
-                const volume = parseFloat(document.getElementById('volume-slider').value);
 
-                youtubePlayer.setLoop(start, end, speed, volume);
-                localPlayer.setLoop(start, end, speed, volume);
+                activePlayer.currentTime = start;
+                activePlayer.play();
+
+                let loopInterval = setInterval(() => {
+                    if (activePlayer.currentTime >= end) {
+                        activePlayer.currentTime = start;
+                        activePlayer.play();
+                    }
+                }, 500);
+
+                // Clear loop on pause
+                activePlayer.on('pause', () => clearInterval(loopInterval));
             });
 
             document.getElementById('pause-video').addEventListener('click', () => {
-                youtubePlayer.pause();
-                localPlayer.pause();
+                activePlayer.pause();
             });
 
             document.getElementById('speed-slider').addEventListener('input', (event) => {
-                const speedIndex = parseInt(event.target.value);
-                const speed = YT_SPEEDS[speedIndex];
+                const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+                const speed = speeds[parseInt(event.target.value)];
+                activePlayer.speed = speed;
                 document.getElementById('speed-display').innerText = `${speed}x`;
-                youtubePlayer.setSpeed(speed);
-                localPlayer.setSpeed(speed);
             });
 
             document.getElementById('volume-slider').addEventListener('input', (event) => {
                 const volume = parseFloat(event.target.value);
+                activePlayer.volume = volume;
                 document.getElementById('volume-display').innerText = `${Math.round(volume * 100)}%`;
-                youtubePlayer.setVolume(volume);
-                localPlayer.setVolume(volume);
             });
         });
     </script>
