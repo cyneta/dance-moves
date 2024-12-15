@@ -6,8 +6,8 @@
     <title>{{ dance_type }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
-    <link rel="stylesheet" href="/static/style.css"> <!-- Consolidated styles -->
-</head>    
+    <link rel="stylesheet" href="/static/style.css">
+</head>
 <body class="d-flex flex-column">
     <div class="container-fluid">
         <div class="row">
@@ -102,7 +102,7 @@
             <!-- Right Panel -->
             <div id="right-panel" class="col-md-9">
                 {% if first_move and first_move.video_filename %}
-                    <video id="player" class="plyr" playsinline controls>
+                    <video id="player" class="plyr" playsinline controls preload="metadata">
                         <source src="/static/videos/{{ first_move.video_filename }}" type="video/mp4">
                     </video>
                 {% else %}
@@ -117,9 +117,36 @@
         const speeds = [0.25, 0.32, 0.4, 0.5, 0.63, 0.8, 1, 1.26, 1.58, 2];
         let player;
 
-        function loadVideo(videoId, start, end, speed, notes) {
-            const videoSrc = `/static/videos/${videoId}`;
+        function findClosestSpeed(speed) {
+            // Find the closest value in the `speeds` array
+            return speeds.reduce((prev, curr) => {
+                return Math.abs(curr - speed) < Math.abs(prev - speed) ? curr : prev;
+            });
+        }
+
+        function setPlayerSpeed(speed) {
+            // Find the closest speed from the slider values
+            const closestSpeed = findClosestSpeed(speed);
+            player.speed = closestSpeed;
+
+            // Update the slider position and display
+            const sliderIndex = speeds.indexOf(closestSpeed);
+            document.getElementById('speed-slider').value = sliderIndex;
+            document.getElementById('speed-display').innerText = `${closestSpeed}x`;
+
+            console.log(`Speed set to closest value: ${closestSpeed}`);
+        }
+
+        function loadVideo(videoFilename, start, end, speed, notes) {
+            const videoSrc = `/static/videos/${videoFilename}`;
             console.log(`Loading video: ${videoSrc}, Start: ${start}, End: ${end}, Speed: ${speed}`);
+
+            // Avoid resetting source if already loaded
+            if (player.source?.sources?.[0]?.src === videoSrc) {
+                console.log('Source unchanged, skipping reload.');
+                applyStartTimeAndLoop(start, end, notes, speed);
+                return;
+            }
 
             player.source = {
                 type: 'video',
@@ -128,42 +155,7 @@
 
             player.once('loadeddata', () => {
                 console.log('Video loaded. Setting start time...');
-                
-                player.currentTime = start;
-                console.log(`Attempted to set start time to: ${start}`);
-
-                setTimeout(() => {
-                    console.log(`After timeout, current time is: ${player.currentTime}`);
-                    if (player.currentTime !== start) {
-                        console.warn(`Start time mismatch. Retrying seek...`);
-                        player.currentTime = start;
-                    }
-
-                    player.play().then(() => {
-                        console.log(`Playback started successfully at: ${player.currentTime}`);
-                    }).catch(error => {
-                        console.error('Error starting playback:', error);
-                    });
-
-                    // Clear any previous looping logic
-                    player.off('timeupdate');
-
-                    // Add timeupdate listener for looping
-                    player.on('timeupdate', () => {
-                        if (player.currentTime >= end) {
-                            console.log(`Looping back to start: ${start}`);
-                            player.currentTime = start;
-                            player.play().catch(error => {
-                                console.error('Error resuming playback in loop:', error);
-                            });
-                        }
-                    });
-
-                }, 100); // Allow 100ms for the seek operation
-
-                document.getElementById('notes-content').innerText = notes;
-                document.getElementById('speed-slider').value = speeds.indexOf(speed);
-                document.getElementById('speed-display').innerText = `${speed}x`;
+                applyStartTimeAndLoop(start, end, notes, speed);
             });
 
             player.on('error', (error) => {
@@ -171,10 +163,45 @@
             });
         }
 
+        function applyStartTimeAndLoop(start, end, notes, speed) {
+            player.currentTime = start;
+            console.log(`Attempted to set start time to: ${start}`);
+
+            setTimeout(() => {
+                if (player.currentTime !== start) {
+                    console.warn('Start time mismatch. Retrying...');
+                    player.currentTime = start;
+                }
+
+                player.play().then(() => {
+                    console.log(`Playback started at: ${player.currentTime}`);
+                }).catch(error => {
+                    console.error('Error starting playback:', error);
+                });
+
+                // Handle looping
+                player.off('timeupdate'); // Remove any previous listeners
+                player.on('timeupdate', () => {
+                    if (player.currentTime >= end) {
+                        console.log(`Looping back to start: ${start}`);
+                        player.currentTime = start;
+                        player.play().catch(error => {
+                            console.error('Error resuming playback in loop:', error);
+                        });
+                    }
+                });
+
+                // Display notes
+                document.getElementById('notes-content').innerText = notes;
+
+                // Update speed slider and display
+                setPlayerSpeed(speed);
+            }, 100); // Allow time for seeking
+        }
+
         function updateSpeed(value) {
             const speed = speeds[parseInt(value, 10)];
-            player.speed = speed;
-            document.getElementById('speed-display').innerText = `${speed}x`;
+            setPlayerSpeed(speed);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -185,6 +212,7 @@
                 updateSpeed(event.target.value);
             });
         });
-    </script>
+
+</script>
 </body>
 </html>
