@@ -155,6 +155,64 @@
             });    
         }
     
+        function playGuide(videoFilename, guideStart, notes) {
+            const videoSrc = `/static/videos/${videoFilename}`;
+            console.log(`[Guide] Loading guide: ${videoSrc}, Start: ${guideStart}`);
+
+            // If the video source hasn't changed, seek and play directly
+            if (player.source?.sources?.[0]?.src === videoSrc) {
+                console.log(`[Guide] Source unchanged, skipping reload.`);
+                player.off('timeupdate'); // Clear looping logic
+                setPlayerSpeed(1); // Ensure speed is set to 1 for the guide
+                seekToStart(guideStart); // Use robust seeking
+                displayNotes(notes); // Update notes
+                return;
+            }
+
+            // Load a new source if the video has changed
+            player.source = {
+                type: 'video',
+                sources: [{ src: videoSrc, type: 'video/mp4' }]
+            };
+
+            player.once('loadedmetadata', () => {
+                console.log(`[Guide] Metadata loaded. Seeking to guide start.`);
+                player.off('timeupdate'); // Clear looping logic
+                setPlayerSpeed(1); // Ensure speed is set to 1 for the guide
+                seekToStart(guideStart); // Use robust seeking
+                displayNotes(notes); // Update notes
+            });
+
+            player.on('error', (error) => {
+                console.error(`[Guide Error]`, error);
+            });
+        }
+
+        function displayNotes(notes) {
+            document.getElementById('notes-content').innerText = notes;
+            console.log(`[Notes] Updated notes: ${notes}`);
+        }
+
+        function startGuidePlayback(guideStart, notes) {
+            // Clear previous timeupdate listener to disable looping
+            player.off('timeupdate');
+
+            // Seek to the guide start time
+            player.currentTime = guideStart;
+
+            player.once('seeked', () => {
+                console.log(`[Guide] Successfully sought to: ${player.currentTime}`);
+                player.play().catch(error => {
+                    console.error(`[Guide Play Error]`, error);
+                });
+            });
+
+            // Display notes
+            document.getElementById('notes-content').innerText = notes;
+
+            console.log(`[Guide] Playing from start time: ${guideStart}`);
+        }
+
         function seekToStart(start) {
             console.log(`[Seek] Attempting to set start time to: ${start}`);
             let retryCount = 0;
@@ -163,6 +221,18 @@
 
             function attemptSeek() {
                 console.log(`[Seek Attempt] Retry #${retryCount + 1}`);
+                
+                // Special case: Handle start time of 0 directly
+                if (start === 0) {
+                    console.log(`[Seek] Special case: Setting start time to 0`);
+                    player.currentTime = 0;
+                    player.play().catch(error => {
+                        console.error(`[Play Error]`, error);
+                    });
+                    return; // Exit early for start time of 0
+                }
+
+                // Normal seeking behavior
                 player.currentTime = start;
 
                 // Add a one-time event listener for the 'seeked' event
