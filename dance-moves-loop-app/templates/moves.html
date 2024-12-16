@@ -159,13 +159,15 @@
             const videoSrc = `/static/videos/${videoFilename}`;
             console.log(`[Guide] Loading guide: ${videoSrc}, Start: ${guideStart}`);
 
+            // Clear any existing timeupdate logic
+            player.off('timeupdate'); 
+
             // If the video source hasn't changed, seek and play directly
             if (player.source?.sources?.[0]?.src === videoSrc) {
                 console.log(`[Guide] Source unchanged, skipping reload.`);
-                player.off('timeupdate'); // Clear looping logic
-                setPlayerSpeed(1); // Ensure speed is set to 1 for the guide
                 seekToStart(guideStart); // Use robust seeking
                 displayNotes(notes); // Update notes
+                setPlayerSpeed(1); // Set speed to 1 for guide playback
                 return;
             }
 
@@ -178,9 +180,9 @@
             player.once('loadedmetadata', () => {
                 console.log(`[Guide] Metadata loaded. Seeking to guide start.`);
                 player.off('timeupdate'); // Clear looping logic
-                setPlayerSpeed(1); // Ensure speed is set to 1 for the guide
                 seekToStart(guideStart); // Use robust seeking
                 displayNotes(notes); // Update notes
+                setPlayerSpeed(1); // Set speed to 1 for guide playback
             });
 
             player.on('error', (error) => {
@@ -188,29 +190,22 @@
             });
         }
 
-        function displayNotes(notes) {
-            document.getElementById('notes-content').innerText = notes;
-            console.log(`[Notes] Updated notes: ${notes}`);
-        }
-
         function startGuidePlayback(guideStart, notes) {
-            // Clear previous timeupdate listener to disable looping
+            // Clear previous timeupdate listener to ensure no looping
             player.off('timeupdate');
 
             // Seek to the guide start time
-            player.currentTime = guideStart;
-
-            player.once('seeked', () => {
-                console.log(`[Guide] Successfully sought to: ${player.currentTime}`);
-                player.play().catch(error => {
-                    console.error(`[Guide Play Error]`, error);
-                });
-            });
+            seekToStart(guideStart);
 
             // Display notes
-            document.getElementById('notes-content').innerText = notes;
+            displayNotes(notes);
 
             console.log(`[Guide] Playing from start time: ${guideStart}`);
+        }
+        
+        function displayNotes(notes) {
+            document.getElementById('notes-content').innerText = notes;
+            console.log(`[Notes] Updated notes: ${notes}`);
         }
 
         function seekToStart(start) {
