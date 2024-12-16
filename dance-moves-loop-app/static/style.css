@@ -1,8 +1,8 @@
-/* General Layout */
-body, html {
+/* Ensure Left Panel doesn't collapse */
+html, body {
+    height: 100%; /* Ensure full height layout */
     margin: 0;
-    height: 100%;
-    overflow: hidden; /* Prevent outer page scrolling */
+    overflow: hidden; /* Prevent scrolling of the outer page */
 }
 
 body {
@@ -10,21 +10,29 @@ body {
     flex-direction: column; /* Allow natural flow */
 }
 
-/* Left Panel */
+/* Left Panel: Full height container */
 #left-panel {
-    flex: 0 0 24%; /* Maintain panel width */
     display: flex;
     flex-direction: column;
-    height: 100%;
-    overflow-y: auto; /* Allow vertical scrolling */
-    padding: 10px;
-    border-right: 1px solid #ddd;
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Prevent overflow from content */
+    padding: 0.5rem; /* Optional padding for spacing */
 }
 
-/* Moves Table Container */
+/* Moves Table: Fixed height with scrolling */
 #moves-table-container {
-    max-height: 50vh; /* Limit table height to half the viewport */
-    overflow-y: auto; /* Add vertical scroll for long tables */
+    flex-shrink: 0; /* Prevent shrinking */
+    height: 28vh; /* Fixed height as percentage of viewport */
+    overflow-y: auto; /* Scrollable if content exceeds height */
+    margin-bottom: 0.5rem; /* Small gap between table and notes */
+    border: 1px solid #ddd; /* Optional for clarity */
+}
+
+/* Notes Section: Directly below moves table */
+.card {
+    flex-shrink: 0; /* Prevent shrinking */
+    height: 25vh; /* Fixed height for the notes panel */
+    border: 1px solid #ddd; /* Optional for clarity */
 }
 
 /* Right Panel */
