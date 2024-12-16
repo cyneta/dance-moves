@@ -102,13 +102,15 @@
             <!-- Right Panel -->
             <div id="right-panel" class="col-md-9">
                 {% if first_move and first_move.video_filename %}
-                    <video id="player" class="plyr" playsinline controls preload="metadata">
-                        <source src="/static/videos/{{ first_move.video_filename }}" type="video/mp4">
-                    </video>
+                    <div id="player-wrapper">
+                        <video id="player" class="plyr" playsinline controls preload="metadata">
+                            <source src="/static/videos/{{ first_move.video_filename }}" type="video/mp4">
+                        </video>
+                    </div>
                 {% else %}
                     <p>No video available for the selected move.</p>
                 {% endif %}
-            </div>
+            </div>                       
         </div>
     </div>
 
