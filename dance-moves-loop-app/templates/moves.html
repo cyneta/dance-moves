@@ -114,103 +114,131 @@
 
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
     <script>
+        console.log('[Debug] Script version: 1.0.0');
         const speeds = [0.25, 0.32, 0.4, 0.5, 0.63, 0.8, 1, 1.26, 1.58, 2];
         let player;
-
+    
         function findClosestSpeed(speed) {
-            // Find the closest value in the `speeds` array
-            return speeds.reduce((prev, curr) => {
-                return Math.abs(curr - speed) < Math.abs(prev - speed) ? curr : prev;
-            });
+            return speeds.reduce((prev, curr) => Math.abs(curr - speed) < Math.abs(prev - speed) ? curr : prev);
         }
-
+    
         function setPlayerSpeed(speed) {
-            // Find the closest speed from the slider values
             const closestSpeed = findClosestSpeed(speed);
             player.speed = closestSpeed;
-
-            // Update the slider position and display
             const sliderIndex = speeds.indexOf(closestSpeed);
             document.getElementById('speed-slider').value = sliderIndex;
             document.getElementById('speed-display').innerText = `${closestSpeed}x`;
-
-            console.log(`Speed set to closest value: ${closestSpeed}`);
+    
+            console.log(`[Speed Set] Closest value: ${closestSpeed}`);
         }
+    
+        function loadVideo(videoFilename, start, end, speed, notes) {
+            const videoSrc = `/static/videos/${videoFilename}`;
+            console.log(`[Load Video] Filename: ${videoFilename}, Start: ${start}, End: ${end}, Speed: ${speed}`);
+    
+            if (player.source?.sources?.[0]?.src === videoSrc) {
+                console.log(`[Load Video] Source unchanged, skipping reload.`);
+                seekToStart(start);
+                applyLooping(start, end, notes, speed);
+                return;
+            }
+    
+            player.source = {
+                type: 'video',
+                sources: [{ src: videoSrc, type: 'video/mp4' }]
+            };
+    
+            player.once('loadedmetadata', () => {
+                console.log(`[Load Video] Metadata loaded for: ${videoSrc}`);
+                seekToStart(start);
+                applyLooping(start, end, notes, speed);
+            });    
+        }
+    
+        function seekToStart(start) {
+            console.log(`[Seek] Attempting to set start time to: ${start}`);
+            let retryCount = 0;
+            const maxRetries = 5; // Limit retries to prevent infinite loop
+            const retryDelay = 500; // Delay between retries in ms
 
-	function loadVideo(videoFilename, start, end, speed, notes) {
-	    const videoSrc = `/static/videos/${videoFilename}`;
-	    console.log(`Loading video: ${videoSrc}, Start: ${start}, End: ${end}, Speed: ${speed}`);
+            function attemptSeek() {
+                console.log(`[Seek Attempt] Retry #${retryCount + 1}`);
+                player.currentTime = start;
 
-	    if (player.source?.sources?.[0]?.src === videoSrc) {
-	        console.log('Source unchanged, skipping reload.');
-	        seekToStart(start);
-	        applyLooping(end, notes, speed);
-	        return;
-	    }
+                // Add a one-time event listener for the 'seeked' event
+                player.once('seeked', () => {
+                    console.log(`[Seek Success] Successfully sought to: ${player.currentTime}`);
+                    player.play().catch(error => {
+                        console.error(`[Play Error]`, error);
+                    });
+                });
 
-	    player.source = {
-	        type: 'video',
-	        sources: [{ src: videoSrc, type: 'video/mp4' }]
-	    };
+                // Retry if the time isn't set correctly after a delay
+                setTimeout(() => {
+                    if (Math.abs(player.currentTime - start) > 0.5) {
+                        retryCount++;
+                        if (retryCount < maxRetries) {
+                            console.warn(`[Seek Retry] Current time: ${player.currentTime}, Expected: ${start}. Retrying...`);
+                            attemptSeek(); // Retry
+                        } else {
+                            console.error(`[Seek Failed] Exceeded maximum retries.`);
+                        }
+                    }
+                }, retryDelay);
+            }
 
-	    player.once('loadedmetadata', () => {
-	        console.log('Metadata loaded. Attempting to seek...');
-	        seekToStart(start);
-	        applyLooping(end, notes, speed);
-	    });
-
-	    player.on('error', (error) => {
-	        console.error('Player encountered an error:', error);
-	    });
-	}
-
-	function seekToStart(start) {
-	    player.currentTime = start;
-
-	    player.once('seeked', () => {
-	        console.log(`Successfully sought to: ${player.currentTime}`);
-	        player.play().catch(error => {
-	            console.error('Error starting playback:', error);
-	        });
-	    });
-
-	    setTimeout(() => {
-	        if (Math.abs(player.currentTime - start) > 0.1) {
-	            console.warn(`Seek retry: Current time is ${player.currentTime}, expected ${start}`);
-	            seekToStart(start); // Retry
-	        }
-	    }, 200);
-	}
-
-	function applyLooping(end, notes, speed) {
-	    // Set up looping
-	    player.off('timeupdate'); // Clear previous listeners
-	    player.on('timeupdate', () => {
-	        if (player.currentTime >= end) {
-	            console.log(`Looping back to start`);
-	            seekToStart(start);
-	        }
-	    });
-
-	    // Display notes and update speed
-	    document.getElementById('notes-content').innerText = notes;
-	    setPlayerSpeed(speed);
-	}
-
+            attemptSeek(); // Initial attempt
+        }
+    
+        function applyLooping(start, end, notes, speed) {
+            console.log(`[Looping] Applying looping: Start: ${start}, End: ${end}`);
+    
+            // Clear previous listeners
+            player.off('timeupdate');
+            player.on('timeupdate', () => {
+                if (player.currentTime >= end) {
+                    console.log(`[Looping] Looping back to start: ${start}`);
+                    seekToStart(start);
+                }
+            });
+    
+            // Display notes and update speed
+            document.getElementById('notes-content').innerText = notes;
+            setPlayerSpeed(speed);
+        }
+    
         function updateSpeed(value) {
             const speed = speeds[parseInt(value, 10)];
             setPlayerSpeed(speed);
         }
-
+    
         document.addEventListener('DOMContentLoaded', () => {
-            player = new Plyr('#player');
-
+            if (player) {
+                player.destroy(); // Clean up the existing instance
+                console.log(`[Debug] Plyr destroyed:`, player);
+            }
+            player = new Plyr('#player');            
+            console.log(`[Debug] Plyr instance created:`, player);
+    
             // Attach event listener to speed slider
             document.getElementById('speed-slider').addEventListener('input', (event) => {
                 updateSpeed(event.target.value);
             });
-        });
+    
+            // 
+            player.off('play');
+            player.off('pause');
+            player.off('seeked');
+            player.off('ended');
+            player.off('error');
 
-</script>
-</body>
+            // Add logging for Plyr events
+            player.on('play', () => console.log(`[Event: Play] Playback started.`));
+            player.on('pause', () => console.log(`[Event: Pause] Playback paused.`));
+            player.on('seeked', () => console.log(`[Event: Seeked] Seek operation completed. Current time: ${player.currentTime}`));
+            player.on('ended', () => console.log(`[Event: Ended] Video playback ended.`));
+            player.on('error', (error) => console.error(`[Event: Error]`, error));
+        });
+    </script>
+    </body>
 </html>

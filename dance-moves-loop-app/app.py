@@ -131,10 +131,10 @@ def playlist(dance_type, playlist_name):
     filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes available.")
 
     # Process loop timing and speed
-    filtered_moves['loop_start'] = filtered_moves['loop_start'].apply(lambda x: time_to_seconds(x, 0))
+    filtered_moves['loop_start'] = filtered_moves['loop_start'].apply(lambda x: time_to_seconds(x, 1))
     filtered_moves['loop_end'] = filtered_moves['loop_end'].apply(lambda x: time_to_seconds(x, 100))
     filtered_moves['loop_speed'] = filtered_moves['loop_speed'].fillna(1).astype(float)
-    filtered_moves['guide_start'] = filtered_moves['guide_start'].apply(lambda x: time_to_seconds(x, 0))
+    filtered_moves['guide_start'] = filtered_moves['guide_start'].apply(lambda x: time_to_seconds(x, 1))
 
     # Drop moves without required fields
     missing_videos = filtered_moves[filtered_moves['video_filename'].isna()]
