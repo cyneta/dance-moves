@@ -142,6 +142,7 @@
                 console.log(`[Load Video] Source unchanged, skipping reload.`);
                 seekToStart(start);
                 applyLooping(start, end, notes, speed);
+                displayNotes(notes);
                 return;
             }
     
@@ -154,7 +155,8 @@
                 console.log(`[Load Video] Metadata loaded for: ${videoSrc}`);
                 seekToStart(start);
                 applyLooping(start, end, notes, speed);
-            });    
+                displayNotes(notes);
+            });
         }
     
         function playGuide(videoFilename, guideStart, notes) {
@@ -206,8 +208,9 @@
         }
         
         function displayNotes(notes) {
-            document.getElementById('notes-content').innerText = notes;
-            console.log(`[Notes] Updated notes: ${notes}`);
+            const formattedNotes = notes.replace(/  /g, "\n"); // Replace double spaces with newlines
+            document.getElementById('notes-content').innerText = formattedNotes; // Preserve newlines
+            console.log(`[Notes] Updated notes: ${formattedNotes}`);
         }
 
         function seekToStart(start) {
