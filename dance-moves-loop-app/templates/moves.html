@@ -282,15 +282,61 @@
                 player.destroy(); // Clean up the existing instance
                 console.log(`[Debug] Plyr destroyed:`, player);
             }
-            player = new Plyr('#player');            
+            player = new Plyr('#player', {
+                controls: [
+                    'play',           // Play/Pause button
+                    'progress',       // Seek bar
+                    'current-time',   // Time elapsed
+                    'duration',       // Total duration
+                    'mute',           // Mute/Unmute button
+                    'volume',         // Volume control
+                    'fullscreen'      // Fullscreen toggle
+                ]
+            });            
             console.log(`[Debug] Plyr instance created:`, player);
-    
+
+            // Ensure the player always has focus
+            document.getElementById('player').focus();
+
+            // Add keyboard controls for the player
+            document.addEventListener('keydown', (event) => {
+                const key = event.key;
+                const shiftPressed = event.shiftKey; // Check if Shift is pressed
+                const seekAmount = shiftPressed ? 5 : 1; // Shift for 5 seconds, otherwise 1 second
+
+                // Prevent default actions for handled keys
+                if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) {
+                    event.preventDefault();
+                }
+
+                switch (key) {
+                    case ' ': // Spacebar to play/pause
+                        player.togglePlay();
+                        break;
+                    case 'ArrowLeft': // Rewind by 1 or 5 seconds
+                        player.currentTime = Math.max(0, player.currentTime - seekAmount);
+                        console.log(`[Seek] Rewound by ${seekAmount} seconds. Current time: ${player.currentTime}`);
+                        break;
+                    case 'ArrowRight': // Fast-forward by 1 or 5 seconds
+                        player.currentTime = Math.min(player.duration, player.currentTime + seekAmount);
+                        console.log(`[Seek] Fast-forwarded by ${seekAmount} seconds. Current time: ${player.currentTime}`);
+                        break;
+                    case 'ArrowUp': // Increase volume
+                        player.volume = Math.min(1, player.volume + 0.1);
+                        console.log(`[Volume] Increased to: ${player.volume}`);
+                        break;
+                    case 'ArrowDown': // Decrease volume
+                        player.volume = Math.max(0, player.volume - 0.1);
+                        console.log(`[Volume] Decreased to: ${player.volume}`);
+                        break;
+                }
+            });
+
             // Attach event listener to speed slider
             document.getElementById('speed-slider').addEventListener('input', (event) => {
                 updateSpeed(event.target.value);
             });
-    
-            // 
+
             player.off('play');
             player.off('pause');
             player.off('seeked');
@@ -304,6 +350,7 @@
             player.on('ended', () => console.log(`[Event: Ended] Video playback ended.`));
             player.on('error', (error) => console.error(`[Event: Error]`, error));
         });
+
     </script>
     </body>
 </html>
