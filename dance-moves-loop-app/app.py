@@ -4,7 +4,8 @@ import logging
 import requests
 import io
 import pandas as pd
-from flask import Flask, send_from_directory, render_template, request, redirect
+from flask import Flask, send_from_directory, render_template, request, redirect, Response
+from datetime import datetime, timedelta
 from urllib.parse import unquote
 
 # Adjust pandas display options for debugging
@@ -61,13 +62,26 @@ def home():
 
 @app.route('/static/videos/<path:filename>')
 def serve_video(filename):
-    decoded_filename = unquote(filename)  # Decode URL-encoded characters
-    print(f"Attempting to serve file: {decoded_filename}")
-    try:
-        return send_from_directory("static/videos", decoded_filename)
-    except FileNotFoundError:
-        print(f"File not found: {decoded_filename}")
-        return "File not found", 404
+    # Serve the video file
+    response = send_from_directory('static/videos', filename)
+    
+    # Step 1: Detect the user's timezone offset (fallback if not provided)
+    user_timezone_offset = request.args.get('tz', default=0, type=int)  # Client sends offset in minutes
+
+    # Step 2: Calculate the user's local midnight
+    now_utc = datetime.utcnow()
+    user_offset = timedelta(minutes=user_timezone_offset)
+    now_local = now_utc + user_offset
+    local_midnight = (now_local + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    expires_utc = local_midnight - user_offset  # Convert back to UTC
+
+    # Step 3: Set caching headers
+    response.headers['Cache-Control'] = 'public, must-revalidate'
+    response.headers['Expires'] = expires_utc.strftime("%a, %d %b %Y %H:%M:%S GMT")
+    response.headers['Accept-Ranges'] = 'bytes'  # Allow partial content requests
+
+    print(f"Local midnight for user: {local_midnight}, Expires header set to: {expires_utc}")
+    return response
 
 @app.route('/<dance_type>/', defaults={'playlist_name': None})
 @app.route('/<dance_type>/<playlist_name>')

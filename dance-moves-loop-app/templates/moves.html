@@ -208,45 +208,32 @@
         function seekToStart(start) {
             console.log(`[Seek] Attempting to set start time to: ${start}`);
             let retryCount = 0;
-            const maxRetries = 5; // Limit retries to prevent infinite loop
+            const maxRetries = 5; // Limit retries
             const retryDelay = 500; // Delay between retries in ms
+            let seekSuccessful = false; // Flag to prevent redundant retries
 
             function attemptSeek() {
-                console.log(`[Seek Attempt] Retry #${retryCount + 1}`);
-                
-                // Special case: Handle start time of 0 directly
-                if (start === 0) {
-                    console.log(`[Seek] Special case: Setting start time to 0`);
-                    player.currentTime = 0;
-                    player.play().catch(error => {
-                        console.error(`[Play Error]`, error);
-                    });
-                    return; // Exit early for start time of 0
-                }
+                if (seekSuccessful) return; // Exit if already successful
 
-                // Normal seeking behavior
+                console.log(`[Seek Attempt] Retry #${retryCount + 1}`);
+
+                // Set the player to the start time
                 player.currentTime = start;
 
-                // Add a one-time event listener for the 'seeked' event
-                player.once('seeked', () => {
-                    console.log(`[Seek Success] Successfully sought to: ${player.currentTime}`);
-                    player.play().catch(error => {
-                        console.error(`[Play Error]`, error);
-                    });
-                });
-
-                // Retry if the time isn't set correctly after a delay
+                // Delay before checking if the seek succeeded
                 setTimeout(() => {
-                    if (Math.abs(player.currentTime - start) > 0.5) {
+                    if (Math.abs(player.currentTime - start) <= 0.5) {
+                        console.log(`[Seek Success] Successfully sought to: ${player.currentTime}`);
+                        player.play().catch(error => console.error(`[Play Error]`, error));
+                        seekSuccessful = true; // Mark as successful
+                    } else if (retryCount < maxRetries) {
                         retryCount++;
-                        if (retryCount < maxRetries) {
-                            console.warn(`[Seek Retry] Current time: ${player.currentTime}, Expected: ${start}. Retrying...`);
-                            attemptSeek(); // Retry
-                        } else {
-                            console.error(`[Seek Failed] Exceeded maximum retries.`);
-                        }
+                        console.warn(`[Seek Retry] Current time: ${player.currentTime}, Expected: ${start}. Retrying...`);
+                        attemptSeek(); // Retry seek
+                    } else {
+                        console.error(`[Seek Failed] Exceeded maximum retries.`);
                     }
-                }, retryDelay);
+                }, retryDelay); // Delay before checking success
             }
 
             attemptSeek(); // Initial attempt
