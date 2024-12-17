@@ -31,31 +31,9 @@
                     {% endfor %}
                 </div>
 
-                <!-- Speed Control -->
-                <div id="speed-control" class="my-3">
-                    <label for="speed-slider" class="me-2">Speed:</label>
-                    <input 
-                        type="range" 
-                        id="speed-slider" 
-                        min="0" 
-                        max="9" 
-                        step="1" 
-                        value="6" 
-                        oninput="updateSpeed(this.value)"
-                    />
-                    <span id="speed-display" class="ms-2">1x</span>
-                </div>
-
-                <!-- Moves Table -->
+                <!-- Moves Table (Header Removed) -->
                 <div id="moves-table-container" class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Move</th>
-                                <th>Loop</th>
-                                <th>Guide</th>
-                            </tr>
-                        </thead>
+                    <table class="table table-bordered table-striped table-hover mb-0">
                         <tbody>
                             {% for move in moves %}
                             <tr>
@@ -90,9 +68,23 @@
                     </table>
                 </div>
 
-                <!-- Notes Section -->
+                <!-- Speed Control -->
+                <div id="speed-control" class="my-3">
+                    <label for="speed-slider" class="me-2">Speed:</label>
+                    <input 
+                        type="range" 
+                        id="speed-slider" 
+                        min="0" 
+                        max="9" 
+                        step="1" 
+                        value="6" 
+                        oninput="updateSpeed(this.value)"
+                    />
+                    <span id="speed-display" class="ms-2">1x</span>
+                </div>
+
+                <!-- Notes Section (Header Removed) -->
                 <div class="card">
-                    <div class="card-header">Notes</div>
                     <div class="card-body overflow-auto" style="max-height: 250px;">
                         <p id="notes-content">Select a move to see the notes here.</p>
                     </div>
@@ -283,7 +275,7 @@
         }
     
         document.addEventListener('DOMContentLoaded', () => {
-            // Existing Plyr initialization logic
+            // Plyr initialization
             const videoElement = document.getElementById('player');
 
             if (!videoElement) {
@@ -350,6 +342,33 @@
             document.getElementById('speed-slider').addEventListener('input', (event) => {
                 updateSpeed(event.target.value);
             });
+
+            // Handle orientation changes for video player  
+            const videoWrapper = document.getElementById('player-wrapper');
+            const leftPanel = document.getElementById('left-panel');
+            const movesTable = document.getElementById('moves-table-container');
+            const notesSection = document.querySelector('.card');
+
+            function handleOrientationChange() {
+                if (window.innerHeight > window.innerWidth) {
+                    // Portrait Mode: Move video player between moves table and notes panel
+                    if (!movesTable.nextElementSibling?.contains(videoWrapper)) {
+                        leftPanel.insertBefore(videoWrapper, notesSection);
+                        console.log('Video player moved to left panel (portrait mode).');
+                    }
+                } else {
+                    // Landscape Mode: Move video player back to right panel
+                    const rightPanel = document.getElementById('right-panel');
+                    if (rightPanel && !rightPanel.contains(videoWrapper)) {
+                        rightPanel.appendChild(videoWrapper);
+                        console.log('Video player moved back to right panel (landscape mode).');
+                    }
+                }
+            }
+
+            // Run on load and when orientation changes
+            handleOrientationChange();
+            window.addEventListener('resize', handleOrientationChange);
 
             player.off('play');
             player.off('pause');

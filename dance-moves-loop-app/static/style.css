@@ -1,79 +1,143 @@
-/* Ensure Left Panel doesn't collapse */
+/* General styles for the app */
 html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    overflow-y: auto; /* Allow vertical scrolling globally */
+    overflow: hidden; /* Prevent scrolling of the entire page */
 }
 
-body {
-    display: flex;
-    flex-direction: column; /* Allow natural flow */
-}
-
-/* Left Panel: Full height container */
+/* Left Panel */
 #left-panel {
-    flex-direction: column;
-    height: 100vh; /* Full viewport height */
-    padding: 0.5rem; /* Optional padding for spacing */
+    height: 90vh; /* Full viewport height */
+    padding: 0.5rem; /* Uniform padding */
+    overflow-y: auto; /* Enable vertical scrolling */
 }
 
-/* Right Panel */
-#right-panel {
-    padding: 10px;
-    height: 100vh; /* Ensure it takes full height */
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-}
-
-/* Moves Table: Fixed height with scrolling */
+/* Moves Table */
 #moves-table-container {
-    flex-shrink: 0; /* Prevent shrinking */
-    height: 24vh; /* Fixed height as percentage of viewport */
-    overflow-y: auto; /* Scrollable if content exceeds height */
-    margin-bottom: 0.5rem; /* Small gap between table and notes */
-    border: 1px solid #ddd; /* Optional for clarity */
+    height: 250px; 
+    overflow-y: auto; /* Enable scrolling inside the moves table */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    border: 1px solid #ccc; /* Fine border for visual separation */
+    margin-bottom: 0.5rem; /* Add space below the moves table */
 }
 
-/* Notes Section: Scrollable if needed */
+#moves-table-container table {
+    width: 100%; /* Force table to fill container */
+    table-layout: auto; /* Allow columns to size naturally */
+}
+
+#moves-table-container th,
+#moves-table-container td {
+    padding: 0.3rem; /* Compact padding for tighter layout */
+    text-align: left; /* Left-align table content */
+}
+
+/* Ensure buttons fit content */
+#moves-table-container button {
+    width: auto; /* Fit button width to content */
+    padding: 0.25rem 0.5rem; /* Compact padding */
+    margin: 0;
+}
+
+/* Speed Slider: Take up full width */
+#speed-control {
+    display: flex; /* Use flexbox to manage layout */
+    align-items: center; /* Vertically center label and slider */
+    gap: 0.5rem; /* Small spacing between label, slider, and display */
+    width: 100%; /* Ensure the container takes full width */
+}
+
+#speed-slider {
+    flex-grow: 1; /* Allow the slider to expand to take up available space */
+    max-width: 300px; /* Optional: Limit slider width for larger screens */
+    margin: 0; /* Remove extra margin */
+    padding: 0; /* Remove padding */
+}
+
+/* Notes Section */
 .card {
-    flex-shrink: 0; /* Prevent shrinking */
-    height: 25vh; /* Fixed height for the notes panel */
-    max-height: 25vh; /* Limit height for notes section */
-    overflow-y: auto; /* Allow scrolling if needed */
-    margin-top: 10px; /* Add spacing above notes */
-    border: 1px solid #ddd; /* Optional for clarity */
+    margin-top: 0.5rem; /* Small gap from moves table */
+    border: 1px solid #ccc; /* Fine, light gray border */
+    border-radius: 4px; /* Optional: Slight rounding */
+    height: 220px; /* Fixed height for notes box */
+    padding: 0.5rem; /* Add internal spacing */
+    overflow-y: auto; /* Enable scrolling for notes */
 }
 
-/* Player Wrapper: Adjust for 4:3 aspect ratio */
+.card-body {
+    text-align: left; /* Left-align text */
+    padding: 0;
+}
+
+/* Right Panel: Centered Video Player */
+#right-panel {
+    padding: 0;
+    height: 90vh; /* Full viewport height */
+    display: flex; /* Use Flexbox for centering */
+    align-items: center; /* Vertically center content */
+    justify-content: center; /* Horizontally center content */
+    background-color: #000000; /* Placeholder color */
+    overflow: hidden; /* Prevent scrolling */
+}
+
+/* Player Wrapper */
 #player-wrapper {
-    width: 100%;
-    max-width: 100%;
-    aspect-ratio: 4 / 3; /* Maintain 4:3 aspect ratio */
-    border: 1px solid #ddd;
-    background-color: #000; /* Placeholder color */
+    width: 100%; /* Full width */
+    max-width: 100%; /* Prevent overflow */
+    aspect-ratio: 16 / 9; /* Maintain 16:9 ratio */
+    background-color: #000; /* Placeholder background color */
+    overflow: hidden; /* Prevent scrollbars */
 }
 
-/* Video Player: Ensure visibility */
-#player {
-    width: 100%;
-    height: 100%;
-    visibility: visible; /* Ensure video is visible */
-}
-
+/* Adjust Panels for iPhone Landscape */
 @media (max-width: 844px) and (orientation: landscape) {
-    /* Adjust left and right panels for small screens */
     #left-panel {
-        width: 39%; /* 40% of screen width */
+        width: 39%;
     }
 
     #right-panel {
-        width: 61%; /* 60% of screen width */
+        width: 61%; /* Take remaining space */
     }
 
-    /* Adjust player wrapper for small screens */
+    /* Hide 3rd column in moves table */
+    #moves-table-container table th:nth-child(3),
+    #moves-table-container table td:nth-child(3) {
+        display: none;
+    }
+}
+
+/* Portrait Mode Adjustments */
+@media (orientation: portrait) {
+    #right-panel {
+        display: none; /* Hide right panel in portrait */
+    }
+
+    #left-panel {
+        width: 100%; /* Full width */
+        overflow-y: auto; /* Scrollable vertically */
+        padding: 0.5rem; /* Uniform padding */
+    }
+
+    /* Moves Table: Add bottom margin for spacing */
+    #moves-table-container {
+        height: 125px; /* Fixed height */
+        margin-bottom: 0.5rem; /* Add space below the moves table */
+    }
+
+    /* Video Player: Add bottom margin for spacing */
     #player-wrapper {
-        max-height: 80vh; /* Limit video height */
+        width: 100%; /* Full width */
+        aspect-ratio: 16 / 9;
+        margin: 0 auto 0.5rem; /* Center horizontally and add 0.5rem bottom margin */
+    }
+
+    /* Notes Section */
+    .card {
+        flex: 1; /* Take up remaining space */
+        overflow-y: auto; /* Allow scrolling for long notes */
+        margin: 0; /* Remove external margins */
+        border: 1px solid #ccc; /* Fine border for visual separation */
+        padding: 0.5rem; /* Uniform internal padding */
     }
 }
