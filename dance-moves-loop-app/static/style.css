@@ -40,6 +40,10 @@ html, body {
     margin: 0;
 }
 
+.fw-bold {
+    font-weight: bold;
+}
+
 /* Speed Slider: Take up full width */
 #speed-control {
     display: flex; /* Use flexbox to manage layout */
@@ -62,12 +66,14 @@ html, body {
     border-radius: 4px; /* Optional: Slight rounding */
     height: 220px; /* Fixed height for notes box */
     padding: 0.5rem; /* Add internal spacing */
-    overflow-y: auto; /* Enable scrolling for notes */
+    overflow-y: auto; /* Enable vertical scrolling for notes */
+    overflow-x: auto; /* Enable horizontal scrolling */
 }
 
 .card-body {
     text-align: left; /* Left-align text */
     padding: 0;
+    white-space: nowrap; /* Prevent line breaks */
 }
 
 /* Right Panel: Centered Video Player */

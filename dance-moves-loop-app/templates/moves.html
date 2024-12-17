@@ -42,7 +42,7 @@
                     <table class="table table-bordered table-striped table-hover mb-0">
                         <tbody>
                             {% for move in moves %}
-                            <tr>
+                            <tr data-video="{{ move['video_filename'] }}"> <!-- Store video filename in a data attribute -->
                                 <td title="{{ move['move_name'] }}" class="text-truncate" style="max-width: 150px;">{{ move['move_name'] }}</td>
                                 <td>
                                     <button 
@@ -70,7 +70,7 @@
                                 </td>
                             </tr>
                             {% endfor %}
-                        </tbody>
+                        </tbody>                        
                     </table>
                 </div>
 
@@ -132,10 +132,36 @@
             console.log(`[Speed Set] Closest value: ${closestSpeed}`);
         }
     
+        let currentlyPlayingRow = null;
+
         function loadVideo(videoFilename, start, end, speed, notes) {
             const videoSrc = `/static/videos/${videoFilename}`;
             console.log(`[Load Video] Filename: ${videoFilename}, Start: ${start}, End: ${end}, Speed: ${speed}`);
-    
+
+            // Remove bold from the previously playing row
+            if (currentlyPlayingRow) {
+                currentlyPlayingRow.classList.remove('fw-bold');
+                console.log(`[Load Video] Removed bold from previous row.`);
+            }
+
+            // Find the table row for the current video based on the data-video attribute
+            const rows = document.querySelectorAll('#moves-table-container tbody tr');
+            let rowFound = false;
+            rows.forEach(row => {
+                const videoCell = row.getAttribute('data-video'); // Get video filename from the data attribute
+                if (videoCell && videoCell === videoFilename) { // Compare video filename
+                    currentlyPlayingRow = row; // Set the current row as playing
+                    row.classList.add('fw-bold'); // Bold the current row
+                    console.log(`[Load Video] Bolding row for video: ${videoFilename}`);
+                    rowFound = true;
+                }
+            });
+
+            // If no matching row was found, log an error
+            if (!rowFound) {
+                console.warn(`[Load Video] No row found for video: ${videoFilename}`);
+            }
+
             if (player.source?.sources?.[0]?.src === videoSrc) {
                 console.log(`[Load Video] Source unchanged, skipping reload.`);
                 seekToStart(start);
@@ -143,12 +169,12 @@
                 displayNotes(notes);
                 return;
             }
-    
+
             player.source = {
                 type: 'video',
                 sources: [{ src: videoSrc, type: 'video/mp4' }]
             };
-    
+
             player.once('loadedmetadata', () => {
                 console.log(`[Load Video] Metadata loaded for: ${videoSrc}`);
                 seekToStart(start);
