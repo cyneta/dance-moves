@@ -1,8 +1,9 @@
 /* Ensure Left Panel doesn't collapse */
 html, body {
-    height: 100%; /* Ensure full height layout */
     margin: 0;
-    overflow: hidden; /* Prevent scrolling of the outer page */
+    padding: 0;
+    height: 100%;
+    overflow-y: auto; /* Allow vertical scrolling globally */
 }
 
 body {
@@ -12,27 +13,9 @@ body {
 
 /* Left Panel: Full height container */
 #left-panel {
-    display: flex;
     flex-direction: column;
     height: 100vh; /* Full viewport height */
-    overflow: hidden; /* Prevent overflow from content */
     padding: 0.5rem; /* Optional padding for spacing */
-}
-
-/* Moves Table: Fixed height with scrolling */
-#moves-table-container {
-    flex-shrink: 0; /* Prevent shrinking */
-    height: 28vh; /* Fixed height as percentage of viewport */
-    overflow-y: auto; /* Scrollable if content exceeds height */
-    margin-bottom: 0.5rem; /* Small gap between table and notes */
-    border: 1px solid #ddd; /* Optional for clarity */
-}
-
-/* Notes Section: Directly below moves table */
-.card {
-    flex-shrink: 0; /* Prevent shrinking */
-    height: 25vh; /* Fixed height for the notes panel */
-    border: 1px solid #ddd; /* Optional for clarity */
 }
 
 /* Right Panel */
@@ -44,23 +27,53 @@ body {
     justify-content: center;
 }
 
-/* Player Wrapper */
+/* Moves Table: Fixed height with scrolling */
+#moves-table-container {
+    flex-shrink: 0; /* Prevent shrinking */
+    height: 24vh; /* Fixed height as percentage of viewport */
+    overflow-y: auto; /* Scrollable if content exceeds height */
+    margin-bottom: 0.5rem; /* Small gap between table and notes */
+    border: 1px solid #ddd; /* Optional for clarity */
+}
+
+/* Notes Section: Scrollable if needed */
+.card {
+    flex-shrink: 0; /* Prevent shrinking */
+    height: 25vh; /* Fixed height for the notes panel */
+    max-height: 25vh; /* Limit height for notes section */
+    overflow-y: auto; /* Allow scrolling if needed */
+    margin-top: 10px; /* Add spacing above notes */
+    border: 1px solid #ddd; /* Optional for clarity */
+}
+
+/* Player Wrapper: Adjust for 4:3 aspect ratio */
 #player-wrapper {
     width: 100%;
     max-width: 100%;
-    aspect-ratio: 16 / 9; /* Maintain 16:9 ratio */
+    aspect-ratio: 4 / 3; /* Maintain 4:3 aspect ratio */
     border: 1px solid #ddd;
     background-color: #000; /* Placeholder color */
-    overflow: hidden; /* Prevent scrollbars for the container */
 }
 
-/* Video Player */
+/* Video Player: Ensure visibility */
 #player {
     width: 100%;
     height: 100%;
-    visibility: hidden; /* Hide until Plyr initializes */
+    visibility: visible; /* Ensure video is visible */
 }
 
-#player.plyr--setup {
-    visibility: visible; /* Show when Plyr is ready */
+@media (max-width: 844px) and (orientation: landscape) {
+    /* Adjust left and right panels for small screens */
+    #left-panel {
+        width: 39%; /* 40% of screen width */
+    }
+
+    #right-panel {
+        width: 61%; /* 60% of screen width */
+    }
+
+    /* Adjust player wrapper for small screens */
+    #player-wrapper {
+        max-height: 80vh; /* Limit video height */
+    }
 }

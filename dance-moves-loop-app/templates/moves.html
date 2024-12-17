@@ -283,11 +283,19 @@
         }
     
         document.addEventListener('DOMContentLoaded', () => {
-            if (player) {
-                player.destroy(); // Clean up the existing instance
-                console.log(`[Debug] Plyr destroyed:`, player);
+            // Existing Plyr initialization logic
+            const videoElement = document.getElementById('player');
+
+            if (!videoElement) {
+                console.error('[Error] Video element not found!');
+                return;
             }
-            player = new Plyr('#player', {
+
+            if (player) {
+                player.destroy();
+            }
+
+            player = new Plyr(videoElement, {
                 controls: [
                     'play',           // Play/Pause button
                     'progress',       // Seek bar
@@ -297,8 +305,9 @@
                     'volume',         // Volume control
                     'fullscreen'      // Fullscreen toggle
                 ]
-            });            
-            console.log(`[Debug] Plyr instance created:`, player);
+            });
+
+            console.log('[Debug] Plyr instance initialized:', player);
 
             // Ensure the player always has focus
             document.getElementById('player').focus();
