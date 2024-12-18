@@ -42,9 +42,13 @@ def time_to_seconds(time_value):
     Expects valid input; caller must handle missing or invalid values.
     """
     try:
+        # Handle "mm:ss" format
         if isinstance(time_value, str) and ':' in time_value:
+            # Strip whitespace and split on ":"
+            time_value = time_value.strip()
             minutes, seconds = map(int, time_value.split(':'))
             return minutes * 60 + seconds
+        # Handle numeric values (e.g., 126 seconds)
         return int(float(time_value))
     except (ValueError, TypeError) as e:
         logging.error(f"Failed to convert time value '{time_value}': {e}")
@@ -62,9 +66,8 @@ def get_valid_numeric_value(value, default, field_name, move_name, lower_bound=N
 
     # Convert value using time_to_seconds if applicable
     try:
-        numeric_value = time_to_seconds(value)
-        if numeric_value is None:
-            raise ValueError(f"Invalid time format: {value}")
+        numeric_value = time_to_seconds(value) if isinstance(value, str) and ':' in value else float(value)
+
         # Validate against lower and upper bounds
         if lower_bound is not None and numeric_value < lower_bound:
             logging.warning(f"Move Data Validation: '{move_name}': {field_name} adjusted from {numeric_value} to {lower_bound}")
@@ -74,7 +77,7 @@ def get_valid_numeric_value(value, default, field_name, move_name, lower_bound=N
             return upper_bound
 
         return numeric_value
-    except ValueError:
+    except (ValueError, TypeError):
         logging.error(f"Move Data Validation: '{move_name}': Invalid value for {field_name}: {value}. Using default: {default}")
         return default
 
