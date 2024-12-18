@@ -97,7 +97,7 @@ html, body {
 }
 
 /* Adjust Panels for iPhone Landscape */
-@media (max-width: 844px) and (orientation: landscape) {
+@media (max-width: 932px) and (orientation: landscape) {
     #left-panel {
         width: 42%;
     }
