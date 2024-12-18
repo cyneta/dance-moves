@@ -53,10 +53,11 @@
                                             {{ move['loop_start'] }}, 
                                             {{ move['loop_end'] }}, 
                                             {{ move['loop_speed'] }}, 
-                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
+                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}',
+                                            event
                                         )">
                                         Loop
-                                    </button>
+                                    </button>                                
                                 </td>
                                 <td>
                                     <button 
@@ -64,10 +65,11 @@
                                         onclick="playGuide(
                                             '{{ move['video_filename'] }}', 
                                             {{ move['guide_start'] }}, 
-                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}'
+                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}',
+                                            event
                                         )">
                                         Guide
-                                    </button>
+                                    </button>                                
                                 </td>
                             </tr>
                             {% endfor %}
@@ -138,21 +140,20 @@
     
         let currentlyPlayingRow = null;
 
-        function loadVideo(videoFilename, start, end, speed, notes) {
+        function loadVideo(videoFilename, start, end, speed, notes, event) {
             const videoSrc = `/static/videos/${videoFilename}`;
             console.log(`[Load Video] Filename: ${videoFilename}, Start: ${start}, End: ${end}, Speed: ${speed}`);
 
             // Remove bold from all rows
             const rows = document.querySelectorAll('#moves-table-container tbody tr');
-            rows.forEach(row => {
-                row.classList.remove('fw-bold'); // Clear bolding
-            });
+            rows.forEach(row => row.classList.remove('fw-bold')); // Clear bolding
 
-            // Bold only the row with the matching data-video attribute
-            const currentRow = Array.from(rows).find(row => row.getAttribute('data-video') === videoFilename);
+            // Bold only the row associated with the clicked button
+            const clickedButton = event.target; // Button triggering the event
+            const currentRow = clickedButton.closest('tr');
             if (currentRow) {
                 currentRow.classList.add('fw-bold');
-                console.log(`[Load Video] Bolding row for video: ${videoFilename}`);
+                console.log(`[Load Video] Highlighting row for video: ${currentRow.dataset.video}`);
             } else {
                 console.warn(`[Load Video] No matching row found for video: ${videoFilename}`);
             }
@@ -179,23 +180,34 @@
             });
         }
     
-        function playGuide(videoFilename, guideStart, notes) {
+        function playGuide(videoFilename, guideStart, notes, event) {
             const videoSrc = `/static/videos/${videoFilename}`;
             console.log(`[Guide] Loading guide: ${videoSrc}, Start: ${guideStart}`);
 
-            // Clear any existing timeupdate logic
-            player.off('timeupdate'); // This ensures no looping remains active
+            // Remove bold from all rows
+            const rows = document.querySelectorAll('#moves-table-container tbody tr');
+            rows.forEach(row => row.classList.remove('fw-bold')); // Clear bolding
 
-            // If the video source hasn't changed, seek and play directly
+            // Bold only the row associated with the clicked button
+            const clickedButton = event.target; // Button triggering the event
+            const currentRow = clickedButton.closest('tr');
+            if (currentRow) {
+                currentRow.classList.add('fw-bold');
+                console.log(`[Guide] Highlighting row for video: ${currentRow.dataset.video}`);
+            } else {
+                console.warn(`[Guide] No matching row found for video: ${videoFilename}`);
+            }
+
+            // If the video source hasn't changed, just seek and play
             if (player.source?.sources?.[0]?.src === videoSrc) {
                 console.log(`[Guide] Source unchanged, skipping reload.`);
-                seekToStart(guideStart); // Use robust seeking
+                seekToStart(guideStart); // Seek to the guide start time
                 displayNotes(notes); // Update notes
-                setPlayerSpeed(1); // Set speed to 1 for guide playback
+                setPlayerSpeed(1); // Reset speed for guide playback
                 return;
             }
 
-            // Load a new source if the video has changed
+            // Load the new video source
             player.source = {
                 type: 'video',
                 sources: [{ src: videoSrc, type: 'video/mp4' }]
@@ -203,10 +215,9 @@
 
             player.once('loadedmetadata', () => {
                 console.log(`[Guide] Metadata loaded. Seeking to guide start.`);
-                player.off('timeupdate'); // Clear looping logic
-                seekToStart(guideStart); // Use robust seeking
-                displayNotes(notes); // Update notes
-                setPlayerSpeed(1); // Set speed to 1 for guide playback
+                seekToStart(guideStart);
+                displayNotes(notes);
+                setPlayerSpeed(1);
             });
 
             player.on('error', (error) => {
