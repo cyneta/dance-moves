@@ -36,22 +36,93 @@ def fetch_sheet_data(sheet_url):
         logging.error(f"Error fetching the Google Sheet: {e}")
         return pd.DataFrame()  # Return an empty DataFrame on error
 
-def time_to_seconds(time_value, default=None):
+def time_to_seconds(time_value):
     """
     Converts time value (e.g., "mm:ss", integer seconds) to total seconds.
-    Returns `default` for invalid or missing values.
+    Expects valid input; caller must handle missing or invalid values.
     """
-#    logging.debug(f"Converting time value: {time_value}")
-    if pd.isna(time_value) or time_value == '':
-        return default
     try:
         if isinstance(time_value, str) and ':' in time_value:
             minutes, seconds = map(int, time_value.split(':'))
             return minutes * 60 + seconds
         return int(float(time_value))
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         logging.error(f"Failed to convert time value '{time_value}': {e}")
+        return None
+
+def get_valid_numeric_value(value, default, field_name, move_name, lower_bound=None, upper_bound=None):
+    """
+    Handles missing or invalid numeric values for a given field.
+    Applies a default, ensures range, and logs adjustments.
+    Converts 'mm:ss' formatted strings to seconds if necessary.
+    """
+    if pd.isna(value) or value == '':
+        logging.info(f"[Default Applied] Move '{move_name}': {field_name} set to {default}")
         return default
+
+    # Convert value using time_to_seconds if applicable
+    try:
+        numeric_value = time_to_seconds(value)
+        if numeric_value is None:
+            raise ValueError(f"Invalid time format: {value}")
+        # Validate against lower and upper bounds
+        if lower_bound is not None and numeric_value < lower_bound:
+            logging.warning(f"Move Data Validation: '{move_name}': {field_name} adjusted from {numeric_value} to {lower_bound}")
+            return lower_bound
+        if upper_bound is not None and numeric_value > upper_bound:
+            logging.warning(f"Move Data Validation: '{move_name}': {field_name} adjusted from {numeric_value} to {upper_bound}")
+            return upper_bound
+
+        return numeric_value
+    except ValueError:
+        logging.error(f"Move Data Validation: '{move_name}': Invalid value for {field_name}: {value}. Using default: {default}")
+        return default
+
+def process_move(row):
+    """
+    Process a single row to enforce bounds, validate ranges, and log adjustments.
+    """
+    move_name = row.get('move_name', 'Unknown Move')
+
+    # Handle loop_start
+    loop_start = get_valid_numeric_value(
+        value=row.get('loop_start'),
+        default=0,
+        field_name='loop_start',
+        move_name=move_name,
+        lower_bound=0
+    )
+
+    # Handle loop_end
+    loop_end = get_valid_numeric_value(
+        value=row.get('loop_end'),
+        default=loop_start + 10,
+        field_name='loop_end',
+        move_name=move_name,
+        lower_bound=loop_start + 5
+    )
+
+    # Validate loop_speed
+    loop_speed = get_valid_numeric_value(
+        value=row.get('loop_speed'),
+        default=1,
+        field_name='loop_speed',
+        move_name=move_name,
+        lower_bound=0.25,
+        upper_bound=2
+    )
+
+    # Handle guide_start
+    guide_start = get_valid_numeric_value(
+        value=row.get('guide_start'),
+        default=0,
+        field_name='guide_start',
+        move_name=move_name,
+        lower_bound=0
+    )
+
+    # Return processed values
+    return loop_start, loop_end, loop_speed, guide_start
 
 @app.route('/')
 def home():
@@ -80,7 +151,7 @@ def serve_video(filename):
     response.headers['Expires'] = expires_utc.strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.headers['Accept-Ranges'] = 'bytes'  # Allow partial content requests
 
-    print(f"Local midnight for user: {local_midnight}, Expires header set to: {expires_utc}")
+    #print(f"Local midnight for user: {local_midnight}, Expires header set to: {expires_utc}")
     return response
 
 @app.route('/<dance_type>/', defaults={'playlist_name': None})
@@ -140,23 +211,23 @@ def playlist(dance_type, playlist_name):
 
     # Filter moves based on the selected playlist
     filtered_moves = data[data[playlist_name].notna() & (data[playlist_name] != '')]
-    # logging.debug(f"Filtered Moves Before Drop: {filtered_moves.head()}")
+
+    # Process and validate each move
+    filtered_moves[['loop_start', 'loop_end', 'loop_speed', 'guide_start']] = filtered_moves.apply(
+        lambda row: pd.Series(process_move(row)), axis=1
+    )
 
     # Fill missing notes with a default message
-    filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes available.")
+    filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes for this move.")
 
-    # Process loop timing and speed
-    filtered_moves['loop_start'] = filtered_moves['loop_start'].apply(lambda x: time_to_seconds(x, 1))
-    filtered_moves['loop_end'] = filtered_moves['loop_end'].apply(lambda x: time_to_seconds(x, 100))
-    filtered_moves['loop_speed'] = filtered_moves['loop_speed'].fillna(1).astype(float)
-    filtered_moves['guide_start'] = filtered_moves['guide_start'].apply(lambda x: time_to_seconds(x, 0))
-
-    # Drop moves without required fields
-    missing_videos = filtered_moves[filtered_moves['video_filename'].isna()]
-#    if not missing_videos.empty:
-#        logging.warning(f"Moves Missing Videos: {missing_videos}")
-
+    # Log and drop rows missing required fields
+    dropped_moves = filtered_moves[filtered_moves[['move_name', 'video_filename']].isna().any(axis=1)]
+    if not dropped_moves.empty:
+        logging.warning(f"Dropping moves due to missing fields: {dropped_moves[['move_name', 'video_filename']].to_dict(orient='records')}")
     filtered_moves = filtered_moves.dropna(subset=['move_name', 'video_filename'])
+
+    # Log the final move count
+    logging.info(f"Final move count after filtering '{playlist_name}': {len(filtered_moves)}")
 
     # Pass the first move explicitly
     first_move = filtered_moves.iloc[0].to_dict() if not filtered_moves.empty else None
