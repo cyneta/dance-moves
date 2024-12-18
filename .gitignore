@@ -2,5 +2,5 @@ tree.txt
 desktop.ini
 *.patch
 dance_moves_venv/
-dance-moves-loop-app/__pycache__/
-dance-moves-loop-app/static/videos/
+dance-moves-site/__pycache__/
+dance-moves-site/static/videos/
