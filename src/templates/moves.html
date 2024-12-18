@@ -25,6 +25,7 @@
                     <a href="/salsa" class="btn {% if dance_type == 'Salsa' %}btn-primary{% else %}btn-outline-primary{% endif %}">Salsa</a>
                     <a href="/bachata" class="btn {% if dance_type == 'Bachata' %}btn-primary{% else %}btn-outline-primary{% endif %}">Bachata</a>
                     <a href="/swing" class="btn {% if dance_type == 'Swing' %}btn-primary{% else %}btn-outline-primary{% endif %}">Swing</a>
+                    <a href="/zouk" class="btn {% if dance_type == 'Zouk' %}btn-primary{% else %}btn-outline-primary{% endif %}">Zouk</a>
                 </div>
 
                 <!-- Playlist Links -->
@@ -114,7 +115,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
     <script>
-        console.log('[Debug] Script version: 1.0.0');
+        console.log('[Debug] Script version: 1.0.1');
+
+        console.log('Dance type:', '{{ dance_type }}');
+
         const speeds = [0.25, 0.32, 0.4, 0.5, 0.63, 0.8, 1, 1.26, 1.58, 2];
         let player;
     

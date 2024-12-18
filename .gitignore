@@ -1,6 +1,6 @@
 tree.txt
 desktop.ini
 *.patch
-dance_moves_venv/
-dance-moves-site/__pycache__/
-dance-moves-site/static/videos/
+venv/
+__pycache__/
+videos/
