@@ -142,30 +142,22 @@
             const videoSrc = `/static/videos/${videoFilename}`;
             console.log(`[Load Video] Filename: ${videoFilename}, Start: ${start}, End: ${end}, Speed: ${speed}`);
 
-            // Remove bold from the previously playing row
-            if (currentlyPlayingRow) {
-                currentlyPlayingRow.classList.remove('fw-bold');
-                console.log(`[Load Video] Removed bold from previous row.`);
-            }
-
-            // Find the table row for the current video based on the data-video attribute
+            // Remove bold from all rows
             const rows = document.querySelectorAll('#moves-table-container tbody tr');
-            let rowFound = false;
             rows.forEach(row => {
-                const videoCell = row.getAttribute('data-video'); // Get video filename from the data attribute
-                if (videoCell && videoCell === videoFilename) { // Compare video filename
-                    currentlyPlayingRow = row; // Set the current row as playing
-                    row.classList.add('fw-bold'); // Bold the current row
-                    console.log(`[Load Video] Bolding row for video: ${videoFilename}`);
-                    rowFound = true;
-                }
+                row.classList.remove('fw-bold'); // Clear bolding
             });
 
-            // If no matching row was found, log an error
-            if (!rowFound) {
-                console.warn(`[Load Video] No row found for video: ${videoFilename}`);
+            // Bold only the row with the matching data-video attribute
+            const currentRow = Array.from(rows).find(row => row.getAttribute('data-video') === videoFilename);
+            if (currentRow) {
+                currentRow.classList.add('fw-bold');
+                console.log(`[Load Video] Bolding row for video: ${videoFilename}`);
+            } else {
+                console.warn(`[Load Video] No matching row found for video: ${videoFilename}`);
             }
 
+            // Load the video if the source has changed
             if (player.source?.sources?.[0]?.src === videoSrc) {
                 console.log(`[Load Video] Source unchanged, skipping reload.`);
                 seekToStart(start);
@@ -192,7 +184,7 @@
             console.log(`[Guide] Loading guide: ${videoSrc}, Start: ${guideStart}`);
 
             // Clear any existing timeupdate logic
-            player.off('timeupdate'); 
+            player.off('timeupdate'); // This ensures no looping remains active
 
             // If the video source hasn't changed, seek and play directly
             if (player.source?.sources?.[0]?.src === videoSrc) {

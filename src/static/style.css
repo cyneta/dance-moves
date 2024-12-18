@@ -99,11 +99,11 @@ html, body {
 /* Adjust Panels for iPhone Landscape */
 @media (max-width: 844px) and (orientation: landscape) {
     #left-panel {
-        width: 39%;
+        width: 42%;
     }
 
     #right-panel {
-        width: 61%; /* Take remaining space */
+        width: 58%; /* Take remaining space */
     }
 
     /* Hide 3rd column in moves table */
