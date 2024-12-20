@@ -31,6 +31,9 @@ html, body {
 #moves-table-container td {
     padding: 0.3rem; /* Compact padding for tighter layout */
     text-align: left; /* Left-align table content */
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden; /* Hide overflowing content */
+    text-overflow: ellipsis; /* Add ellipsis for truncated content */
 }
 
 /* Ensure buttons fit content */
