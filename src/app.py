@@ -189,15 +189,15 @@ def playlist(dance_type, playlist_name):
 
     # Detect playlist columns
     fixed_columns = [
-        'move_name', 'move_type', 'level', 'video_filename', 
+        'move_name', 'move_type', 'level', 'video_source', 'video_id', 'video_link', 'video_filename', 
         'loop_start', 'loop_end', 'loop_speed', 'guide_start', 'notes'
     ]
 
     # Detect dynamic playlist columns
     playlist_columns = [
-        col for col in data.columns if col not in fixed_columns and re.match(r'^\d+', col)
+        col for col in data.columns if col not in fixed_columns
+        if col not in fixed_columns and not col.startswith('-')
     ]
-    playlist_columns.sort(key=lambda col: int(re.match(r'^\d+', col).group()))
     logging.debug(f"Playlist Columns: {playlist_columns}")
 
     if not playlist_columns:
