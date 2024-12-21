@@ -215,10 +215,16 @@ def playlist(dance_type, playlist_name):
     # Filter moves based on the selected playlist
     filtered_moves = data[data[playlist_name].notna() & (data[playlist_name] != '')]
 
-    # Process and validate each move
-    filtered_moves[['loop_start', 'loop_end', 'loop_speed', 'guide_start']] = filtered_moves.apply(
-        lambda row: pd.Series(process_move(row)), axis=1
-    )
+    # If no moves are explicitly marked, default to the first row in the data
+    if filtered_moves.empty:
+        logging.warning(f"No moves marked in playlist '{playlist_name}'. Defaulting to the first move in the table.")
+        filtered_moves = data.head(1) if not data.empty else pd.DataFrame()
+
+    # Ensure `filtered_moves` is not empty before applying `process_move`
+    if not filtered_moves.empty:
+        filtered_moves[['loop_start', 'loop_end', 'loop_speed', 'guide_start']] = filtered_moves.apply(
+            lambda row: pd.Series(process_move(row)), axis=1
+        )
 
     # Fill missing notes with a default message
     filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes for this move.")
@@ -232,7 +238,13 @@ def playlist(dance_type, playlist_name):
     # Log the final move count
     logging.info(f"Final move count after filtering '{playlist_name}': {len(filtered_moves)}")
 
-    # Pass the first move explicitly
+    # Modify this part in the `playlist` function:
+    if filtered_moves.empty:
+        logging.warning(f"No moves marked in playlist '{playlist_name}'. Defaulting to the first move in the table.")
+        # Auto-select the first row as default if no rows are explicitly marked
+        filtered_moves = data.head(1) if not data.empty else pd.DataFrame()
+
+    # Pass the first move
     first_move = filtered_moves.iloc[0].to_dict() if not filtered_moves.empty else None
 
     return render_template(
@@ -243,7 +255,6 @@ def playlist(dance_type, playlist_name):
         playlists=[(col, re.sub(r'^\d+', '', col).strip()) for col in playlist_columns],
         dance_type=dance_type.capitalize()
     )
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
