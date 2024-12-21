@@ -78,19 +78,11 @@
                 </div>
 
                 <!-- Speed Control -->
-                <div id="speed-control" class="my-3">
-                    <label for="speed-slider" class="me-2">Speed:</label>
-                    <input 
-                        type="range" 
-                        id="speed-slider" 
-                        min="0" 
-                        max="9" 
-                        step="1" 
-                        value="6" 
-                        oninput="updateSpeed(this.value)"
-                    />
-                    <span id="speed-display" class="ms-2">1x</span>
-                </div>
+                <div id="speed-control">
+                    <label for="speed-slider" id="speed-label">Speed:</label>
+                    <input id="speed-slider" type="range" min="0" max="18" step="1" value="10" />
+                    <span id="speed-display">1x</span>
+                </div>                             
 
                 <!-- Notes Section (Header Removed) -->
                 <div class="card">

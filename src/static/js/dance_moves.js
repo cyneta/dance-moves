@@ -2,7 +2,10 @@ console.log('[Debug] Script version: 1.0.1');
 
 console.log('Dance type:', '{{ dance_type }}');
 
-const speeds = [0.25, 0.32, 0.4, 0.5, 0.63, 0.8, 1, 1.26, 1.58, 2];
+const speeds = [
+    0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.57, 0.63, 0.7, 0.8,
+    0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.8, 2.0
+];
 let player;
 
 function findClosestSpeed(speed) {
@@ -177,8 +180,11 @@ function applyLooping(start, end, notes, speed) {
 }
 
 function updateSpeed(value) {
-    const speed = speeds[parseInt(value, 10)];
+    const index = parseInt(value, 10);
+    const speed = speeds[index];
     setPlayerSpeed(speed);
+    document.getElementById('speed-display').innerText = `${speed}x`;
+    console.log(`[Speed Control] Speed set to: ${speed} (Index: ${index})`);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

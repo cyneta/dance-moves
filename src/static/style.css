@@ -19,7 +19,7 @@ html, body {
     overflow-y: auto; /* Enable scrolling inside the moves table */
     overflow-x: hidden; /* Prevent horizontal scrolling */
     border: 1px solid #ccc; /* Fine border for visual separation */
-    margin-bottom: 0.5rem; /* Add space below the moves table */
+    margin: 0.5rem; /* Add space below the moves table */
 }
 
 #moves-table-container table {
@@ -47,19 +47,54 @@ html, body {
     font-weight: bold;
 }
 
-/* Speed Slider: Take up full width */
 #speed-control {
-    display: flex; /* Use flexbox to manage layout */
-    align-items: center; /* Vertically center label and slider */
-    gap: 0.5rem; /* Small spacing between label, slider, and display */
-    width: 100%; /* Ensure the container takes full width */
+    display: flex; /* Use flexbox for alignment */
+    align-items: center; /* Vertically align label, slider, and display */
+    gap: 0.5rem; /* Space between elements */
+    width: 100%; /* Full width of the container */
+    padding: 0.5rem 0; /* Add padding for spacing */
+}
+
+#speed-label {
+    flex: 0 0 auto; /* Prevent resizing */
+    font-size: 1rem; /* Match the font size */
+    color: #333; /* Neutral color for text */
 }
 
 #speed-slider {
-    flex-grow: 1; /* Allow the slider to expand to take up available space */
-    max-width: 300px; /* Optional: Limit slider width for larger screens */
-    margin: 0; /* Remove extra margin */
-    padding: 0; /* Remove padding */
+    flex: 0 0 65%; /* Take up 80% of the width */
+    height: 15px; /* Thicker slider */
+    background: #ffffff; /* White track */
+    border-radius: 7px; /* Rounded edges */
+    -webkit-appearance: none; /* Remove default styling */
+    border: 1px solid #ccc; /* Subtle border */
+}
+
+#speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    background: #007bff; /* Blue knob */
+    cursor: pointer;
+    border: 2px solid #007bff;
+}
+
+#speed-slider::-moz-range-thumb,
+#speed-slider::-ms-thumb {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: 2px solid #007bff;
+}
+
+#speed-display {
+    flex: 0 0 auto; /* Prevent resizing */
+    font-size: 1rem; /* Match label and slider */
+    color: #007bff; /* Blue text to match slider knob */
+    margin-left: auto; /* Push to the end of the container */
 }
 
 /* Notes Section */
