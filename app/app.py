@@ -154,18 +154,15 @@ def serve_video(filename):
     response.headers['Expires'] = expires_utc.strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.headers['Accept-Ranges'] = 'bytes'  # Allow partial content requests
 
-    #print(f"Local midnight for user: {local_midnight}, Expires header set to: {expires_utc}")
     return response
 
-@app.route('/<dance_type>/', defaults={'playlist_name': None})
-@app.route('/<dance_type>/<playlist_name>')
-def playlist(dance_type, playlist_name):
+@app.route('/<dance_type>/')
+def playlist(dance_type):
     """
-    Display a playlist for a specific dance type.
+    Provide all playlists and moves for a given dance type.
     """
 
     # Google Sheets CSV export URLs for each dance type
-    # This Googl Sheet is named "Dance Moves App Data"
     sheet_urls = {
         'salsa': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=886932256",
         'bachata': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=232533163",
@@ -173,89 +170,42 @@ def playlist(dance_type, playlist_name):
         'wcs': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=2088273102",
         'zouk': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=617690693",
     }
-
-    # Fetch the correct sheet URL
     sheet_url = sheet_urls.get(dance_type.lower())
     if not sheet_url:
         logging.error(f"Unsupported dance type: {dance_type}")
         return f"Dance type '{dance_type}' not supported!", 404
 
-    # Fetch data from Google Sheets
     data = fetch_sheet_data(sheet_url)
-
-    # Check if data is empty
     if data.empty:
         logging.error(f"No data available for dance type: {dance_type}")
         return f"No data available for dance type '{dance_type}'!", 500
 
     # Detect playlist columns
     fixed_columns = [
-        'move_name', 'move_type', 'level', 'video_source', 'video_id', 'video_link', 'video_filename', 
+        'move_name', 'move_type', 'level', 'video_source', 'video_id', 'video_link', 'video_filename',
         'loop_start', 'loop_end', 'loop_speed', 'guide_start', 'notes'
     ]
 
-    # Detect dynamic playlist columns
+    # Exclude playlist columns that start with a '-'
     playlist_columns = [
-        col for col in data.columns if col not in fixed_columns
-        if col not in fixed_columns and not col.startswith('-')
+        col for col in data.columns if col not in fixed_columns and not col.startswith('-')
     ]
-    logging.debug(f"Playlist Columns: {playlist_columns}")
 
-    if not playlist_columns:
-        logging.warning("No playlist columns found in the data.")
-        return "No playlists available!", 500
+    # Add the playlist marker for each move
+    data['playlist_marker'] = data[playlist_columns].apply(lambda row: ', '.join(row.dropna().index), axis=1)
 
-    # Default to the first playlist if none is specified
-    if not playlist_name:
-        playlist_name = playlist_columns[0]
-
-    if playlist_name not in playlist_columns:
-        logging.warning(f"Invalid playlist name: {playlist_name}")
-        return f"Playlist '{playlist_name}' does not exist!", 404
-
-    # Filter moves based on the selected playlist
-    filtered_moves = data[data[playlist_name].notna() & (data[playlist_name] != '')]
-
-    # If no moves are explicitly marked, default to the first row in the data
-    if filtered_moves.empty:
-        logging.warning(f"No moves marked in playlist '{playlist_name}'. Defaulting to the first move in the table.")
-        filtered_moves = data.head(1) if not data.empty else pd.DataFrame()
-
-    # Ensure `filtered_moves` is not empty before applying `process_move`
-    if not filtered_moves.empty:
-        filtered_moves[['loop_start', 'loop_end', 'loop_speed', 'guide_start']] = filtered_moves.apply(
-            lambda row: pd.Series(process_move(row)), axis=1
-        )
-
-    # Fill missing notes with a default message
-    filtered_moves['notes'] = filtered_moves['notes'].fillna("No notes for this move.")
-
-    # Log and drop rows missing required fields
-    dropped_moves = filtered_moves[filtered_moves[['move_name', 'video_filename']].isna().any(axis=1)]
-    if not dropped_moves.empty:
-        logging.warning(f"Dropping moves due to missing fields: {dropped_moves[['move_name', 'video_filename']].to_dict(orient='records')}")
-    filtered_moves = filtered_moves.dropna(subset=['move_name', 'video_filename'])
-
-    # Log the final move count
-    logging.info(f"Final move count after filtering '{playlist_name}': {len(filtered_moves)}")
-
-    # Modify this part in the `playlist` function:
-    if filtered_moves.empty:
-        logging.warning(f"No moves marked in playlist '{playlist_name}'. Defaulting to the first move in the table.")
-        # Auto-select the first row as default if no rows are explicitly marked
-        filtered_moves = data.head(1) if not data.empty else pd.DataFrame()
-
-    # Pass the first move
-    first_move = filtered_moves.iloc[0].to_dict() if not filtered_moves.empty else None
+    # Process all moves
+    data[['loop_start', 'loop_end', 'loop_speed', 'guide_start']] = data.apply(
+        lambda row: pd.Series(process_move(row)), axis=1
+    )
+    data['notes'] = data['notes'].fillna("No notes for this move.")
 
     return render_template(
         'moves.html',
-        first_move=first_move,
-        moves=filtered_moves.to_dict('records'),
-        playlist_name=playlist_name,
+        moves=data.to_dict('records'),
         playlists=[(col, re.sub(r'^\d+', '', col).strip()) for col in playlist_columns],
         dance_type=dance_type.capitalize()
-    )
+)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

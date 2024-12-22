@@ -32,24 +32,19 @@
                 <!-- Playlist Links -->
                 <div>
                     {% for playlist in playlists %}
-                    <a href="/{{ dance_type | lower }}/{{ playlist[0] }}" 
-                       class="btn btn-light w-100 mb-2 {% if playlist[0] == playlist_name %}fw-bold{% endif %}">
-                       {{ playlist[1] }}
-                    </a>
+                    <button 
+                        class="btn btn-light w-100 mb-2 playlist-button {% if playlist[0] == playlist_name %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                        data-playlist="{{ playlist[0] }}">
+                        {{ playlist[1] }}
+                    </button>
                     {% endfor %}
                 </div>
 
-                <!-- Moves Table (Header Removed) -->
+                <!-- Moves Table -->
                 <div id="moves-table-container" class="table-responsive">
                     <table class="table table-bordered table-striped table-hover mb-0">
                         <tbody>
-                            {% for move in moves %}
-                                <tr data-index="{{ loop.index0 }}">
-                                    <td>{{ move['move_name'] }}</td>
-                                    <td><button class="btn btn-primary btn-sm w-100">Loop</button></td>
-                                    <td><button class="btn btn-secondary btn-sm w-100">Guide</button></td>
-                                </tr>                            
-                            {% endfor %}
+                            <!-- Rows are populated dynamically -->
                         </tbody>                                               
                     </table>
                 </div>
@@ -61,7 +56,7 @@
                     <span id="speed-display">1x</span>
                 </div>                             
 
-                <!-- Notes Section (Header Removed) -->
+                <!-- Notes Section -->
                 <div class="card">
                     <div class="card-body overflow-auto" style="max-height: 250px;">
                         <p id="notes-content">Select a move to see the notes here.</p>
@@ -71,25 +66,23 @@
 
             <!-- Right Panel -->
             <div id="right-panel" class="col-md-9">
-                {% if first_move and first_move.video_filename %}
-                    <div id="player-wrapper">
-                        <video id="player" class="plyr" playsinline controls preload="metadata">
-                            <source src="/static/videos/{{ first_move.video_filename }}" type="video/mp4">
-                        </video>
-                    </div>
-                {% else %}
-                    <p>No video available for the selected move.</p>
-                {% endif %}
+                <div id="player-wrapper">
+                    <video id="player" class="plyr" playsinline controls preload="metadata">
+                        <source src="" type="video/mp4">
+                    </video>
+                    <p id="player-placeholder" style="display: none;">No video available for the selected move.</p>
+                </div>                              
             </div>                       
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
-    <script src="/static/js/dance_moves.js"></script>
     <script>
-        // Initialize (filtered) movesData backend
-        const movesData = {{ moves | tojson | safe }};
-        console.log('Moves Data:', movesData);
-    </script>    
-    </body>
+        const allMoves = {{ moves | tojson | safe }};
+        const playlistsData = {{ playlists | tojson | safe }};
+        console.log('All Moves Data:', allMoves);
+        console.log('Playlists Data:', playlistsData);
+    </script>
+    <script src="/static/js/dance_moves.js"></script>   
+</body>
 </html>
