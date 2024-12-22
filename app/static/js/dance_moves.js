@@ -178,8 +178,8 @@ function updateMoveTable() {
 
         row.innerHTML = `
             <td>${move.move_name}</td>
-            <td><button class="btn btn-primary btn-sm w-100">Loop</button></td>
-            <td><button class="btn btn-secondary btn-sm w-100">Guide</button></td>
+            <td><button class="btn btn-outline-primary btn-sm w-100 loop-guide-button">Loop</button></td>
+            <td><button class="btn btn-outline-primary btn-sm w-100 loop-guide-button">Guide</button></td>
         `;
 
         moveTable.appendChild(row);
@@ -233,8 +233,8 @@ function handleMoveAction(moveIndex, action) {
 document.getElementById('moves-table-container').addEventListener('click', (event) => {
     const clickedButton = event.target;
 
-    if (clickedButton.tagName === 'BUTTON') {
-        const action = clickedButton.textContent.trim().toLowerCase();
+    if (clickedButton.tagName === 'BUTTON' && clickedButton.classList.contains('loop-guide-button')) {
+        const action = clickedButton.textContent.trim().toLowerCase(); // Determine action (loop/guide)
         const currentRow = clickedButton.closest('tr');
         const moveIndex = currentRow?.dataset.index;
 
@@ -243,13 +243,17 @@ document.getElementById('moves-table-container').addEventListener('click', (even
             return;
         }
 
-        // Highlight the current row
-        document.querySelectorAll('#moves-table-container tbody tr').forEach(row => row.classList.remove('fw-bold'));
-        currentRow.classList.add('fw-bold');
+        // Clear 'btn-primary' from all Loop/Guide buttons in the entire table
+        document.querySelectorAll('.loop-guide-button').forEach(button => {
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-outline-primary');
+        });
 
-        console.debug(`[Action] Highlighted row with index: ${moveIndex}`);
+        // Highlight the clicked button as active
+        clickedButton.classList.add('btn-primary');
+        clickedButton.classList.remove('btn-outline-primary');
+
         console.info(`[Event Listener] Button clicked. Action: ${action}, Move Index: ${moveIndex}`);
-
         handleMoveAction(moveIndex, action);
     }
 });
