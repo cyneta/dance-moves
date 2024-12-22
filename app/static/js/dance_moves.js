@@ -193,8 +193,8 @@ function selectPlaylist(playlistName) {
     
     const playlistButtons = document.querySelectorAll('.playlist-button');
     playlistButtons.forEach(button => {
-        button.classList.toggle('btn-primary-primary', button.dataset.playlist === playlistName);
-        button.classList.toggle('btn-outline', button.dataset.playlist !== playlistName);
+        button.classList.toggle('btn-primary', button.dataset.playlist === playlistName);
+        button.classList.toggle('btn-outline-primary', button.dataset.playlist !== playlistName);
     });
     
     updateMoveTable();
@@ -243,14 +243,13 @@ document.getElementById('moves-table-container').addEventListener('click', (even
             return;
         }
 
-        console.debug(`[Action] Move index from button: ${moveIndex}`);
-        console.debug('[Move Details]', allMoves[moveIndex]);
-
         // Highlight the current row
         document.querySelectorAll('#moves-table-container tbody tr').forEach(row => row.classList.remove('fw-bold'));
         currentRow.classList.add('fw-bold');
 
+        console.debug(`[Action] Highlighted row with index: ${moveIndex}`);
         console.info(`[Event Listener] Button clicked. Action: ${action}, Move Index: ${moveIndex}`);
+
         handleMoveAction(moveIndex, action);
     }
 });
