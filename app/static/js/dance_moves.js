@@ -1,11 +1,12 @@
-console.log('[Debug] Script version: 1.0.1');
+console.debug('[Debug] Script version: 1.0.1');
 
-console.log('Dance type:', '{{ dance_type }}');
+console.debug('Dance type:', '{{ dance_type }}');
 
 const speeds = [
     0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.57, 0.63, 0.7, 0.8,
     0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.8, 2.0
 ];
+
 let player;
 
 function findClosestSpeed(speed) {
@@ -19,177 +20,178 @@ function setPlayerSpeed(speed) {
     document.getElementById('speed-slider').value = sliderIndex;
     document.getElementById('speed-display').innerText = `${closestSpeed}x`;
 
-    console.log(`[Speed Set] Closest value: ${closestSpeed}`);
-}
-
-let currentlyPlayingRow = null;
-
-function loadVideo(videoFilename, start, end, speed, notes, event) {
-    const videoSrc = `/static/videos/${videoFilename}`;
-    console.log(`[Load Video] Filename: ${videoFilename}, Start: ${start}, End: ${end}, Speed: ${speed}`);
-
-    // Remove bold from all rows
-    const rows = document.querySelectorAll('#moves-table-container tbody tr');
-    rows.forEach(row => row.classList.remove('fw-bold')); // Clear bolding
-
-    // Bold only the row associated with the clicked button
-    const clickedButton = event.target; // Button triggering the event
-    const currentRow = clickedButton.closest('tr');
-    if (currentRow) {
-        currentRow.classList.add('fw-bold');
-        console.log(`[Load Video] Highlighting row for video: ${currentRow.dataset.video}`);
-    } else {
-        console.warn(`[Load Video] No matching row found for video: ${videoFilename}`);
-    }
-
-    // Load the video if the source has changed
-    if (player.source?.sources?.[0]?.src === videoSrc) {
-        console.log(`[Load Video] Source unchanged, skipping reload.`);
-        seekToStart(start);
-        applyLooping(start, end, notes, speed);
-        displayNotes(notes);
-        return;
-    }
-
-    player.source = {
-        type: 'video',
-        sources: [{ src: videoSrc, type: 'video/mp4' }]
-    };
-
-    player.once('loadedmetadata', () => {
-        console.log(`[Load Video] Metadata loaded for: ${videoSrc}`);
-        seekToStart(start);
-        applyLooping(start, end, notes, speed);
-        displayNotes(notes);
-    });
-}
-
-function playGuide(videoFilename, guideStart, notes, event) {
-    const videoSrc = `/static/videos/${videoFilename}`;
-    console.log(`[Guide] Loading guide: ${videoSrc}, Start: ${guideStart}`);
-
-    // Remove bold from all rows
-    const rows = document.querySelectorAll('#moves-table-container tbody tr');
-    rows.forEach(row => row.classList.remove('fw-bold')); // Clear bolding
-
-    // Bold only the row associated with the clicked button
-    const clickedButton = event.target; // Button triggering the event
-    const currentRow = clickedButton.closest('tr');
-    if (currentRow) {
-        currentRow.classList.add('fw-bold');
-        console.log(`[Guide] Highlighting row for video: ${currentRow.dataset.video}`);
-    } else {
-        console.warn(`[Guide] No matching row found for video: ${videoFilename}`);
-    }
-
-    // If the video source hasn't changed, just seek and play
-    if (player.source?.sources?.[0]?.src === videoSrc) {
-        console.log(`[Guide] Source unchanged, skipping reload.`);
-        seekToStart(guideStart); // Seek to the guide start time
-        displayNotes(notes); // Update notes
-        setPlayerSpeed(1); // Reset speed for guide playback
-        return;
-    }
-
-    // Load the new video source
-    player.source = {
-        type: 'video',
-        sources: [{ src: videoSrc, type: 'video/mp4' }]
-    };
-
-    player.once('loadedmetadata', () => {
-        console.log(`[Guide] Metadata loaded. Seeking to guide start.`);
-        seekToStart(guideStart);
-        displayNotes(notes);
-        setPlayerSpeed(1);
-    });
-
-    player.on('error', (error) => {
-        console.error(`[Guide Error]`, error);
-    });
-}
-
-function startGuidePlayback(guideStart, notes) {
-    // Clear previous timeupdate listener to ensure no looping
-    player.off('timeupdate');
-
-    // Seek to the guide start time
-    seekToStart(guideStart);
-
-    // Display notes
-    displayNotes(notes);
-
-    console.log(`[Guide] Playing from start time: ${guideStart}`);
+    console.debug(`[Speed Set] Closest value: ${closestSpeed}`);
 }
 
 function displayNotes(notes) {
     const formattedNotes = notes.replace(/  /g, "\n"); // Replace double spaces with newlines
     document.getElementById('notes-content').innerText = formattedNotes; // Preserve newlines
-    console.log(`[Notes] Updated notes: ${formattedNotes}`);
-}
-
-function seekToStart(start) {
-    console.log(`[Seek] Attempting to set start time to: ${start}`);
-    let retryCount = 0;
-    const maxRetries = 5; // Limit retries
-    const retryDelay = 500; // Delay between retries in ms
-    let seekSuccessful = false; // Flag to prevent redundant retries
-
-    function attemptSeek() {
-        if (seekSuccessful) return; // Exit if already successful
-
-        console.log(`[Seek Attempt] Retry #${retryCount + 1}`);
-
-        // Set the player to the start time
-        player.currentTime = start;
-
-        // Delay before checking if the seek succeeded
-        setTimeout(() => {
-            if (Math.abs(player.currentTime - start) <= 0.5) {
-                console.log(`[Seek Success] Successfully sought to: ${player.currentTime}`);
-                player.play().catch(error => console.error(`[Play Error]`, error));
-                seekSuccessful = true; // Mark as successful
-            } else if (retryCount < maxRetries) {
-                retryCount++;
-                console.warn(`[Seek Retry] Current time: ${player.currentTime}, Expected: ${start}. Retrying...`);
-                attemptSeek(); // Retry seek
-            } else {
-                console.error(`[Seek Failed] Exceeded maximum retries.`);
-            }
-        }, retryDelay); // Delay before checking success
-    }
-
-    attemptSeek(); // Initial attempt
-}
-
-function applyLooping(start, end, notes, speed) {
-    console.log(`[Looping] Applying looping: Start: ${start}, End: ${end}`);
-
-    // Clear previous listeners
-    player.off('timeupdate');
-    player.on('timeupdate', () => {
-        if (player.currentTime >= end) {
-            console.log(`[Looping] Looping back to start: ${start}`);
-            seekToStart(start);
-        }
-    });
-
-    // Display notes and update speed
-    document.getElementById('notes-content').innerText = notes;
-    setPlayerSpeed(speed);
-}
+    console.debug(`[Notes] Updated notes: ${formattedNotes}`);
+}                
 
 function updateSpeed(value) {
     const index = parseInt(value, 10);
     const speed = speeds[index];
     setPlayerSpeed(speed);
     document.getElementById('speed-display').innerText = `${speed}x`;
-    console.log(`[Speed Control] Speed set to: ${speed} (Index: ${index})`);
+    console.info(`[Speed Control] Speed set to: ${speed} (Index: ${index})`);
+}            
+
+function playVideo({ videoFilename, start, end = null, speed = 1, notes = '', isLooping = false }) {
+    const videoSrc = `/static/videos/${videoFilename}`;
+    console.debug(`[Play Video] Video source: ${videoSrc}`);
+    console.info(`[Play Video] Playing video "${videoFilename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
+    
+    try {
+        // Check if the video source needs to be updated
+        if (player.source?.sources?.[0]?.src === videoSrc) {
+            console.debug('[Play Video] Source unchanged, skipping reload');
+            executePlayback(start, end, speed, notes, isLooping);
+            return;
+        }            
+
+        // Update the video source
+        console.debug('[Play Video] Updating player source');
+        player.source = {
+            type: 'video',
+            sources: [{ src: videoSrc, type: 'video/mp4' }]
+        };            
+
+        // Wait for metadata to load
+        player.once('loadedmetadata', () => {
+            console.debug(`[Play Video] Metadata loaded. Preparing playback.`);
+            executePlayback(start, end, speed, notes, isLooping);
+        });            
+        
+    } catch (error) {
+        console.error('[Play Video] Unexpected error:', error);
+    }            
+}            
+
+function executePlayback(start, end, speed, notes, isLooping) {
+    console.debug('[Execute Playback] Starting playback logic');
+    
+    // Update notes and speed
+    setPlayerSpeed(speed);
+    displayNotes(notes);
+
+    // Apply looping only after playback starts
+    if (isLooping && end !== null) {
+        applyLooping(start, end); // Setup looping
+    }            
+    
+    // Seek to the start time (prereq: playback has started)
+    seekToStart(start).then(() => {
+        console.debug('[Execute Playback] Seek completed');
+    }).catch(error => {
+        console.error('[Execute Playback] Seek failed:', error);
+    });            
+}            
+
+function seekToStart(start) {
+    console.debug(`[Seek] Attempting to set start time to: ${start}`);
+    return new Promise((resolve, reject) => {
+        player.play().then(() => {
+            console.debug('[Seek] Playback started to enable seeking.');
+            player.currentTime = start;
+
+            player.once('seeked', () => {
+                if (Math.abs(player.currentTime - start) <= 0.5) {
+                    console.info(`[Seek Success] Sought to: Target time=${start}, Current time: ${player.currentTime}`);
+                    resolve();
+                } else {
+                    console.error(`[Seek Failed] Time mismatch: Target time=${start}, Current time=${player.currentTime}`);
+                    reject(new Error('Seek operation failed.'));
+                }
+            });
+        }).catch(error => {
+            console.error('[Seek] Failed to start playback:', error);
+            reject(error);
+        });
+    });
 }
+
+function applyLooping(start, end) {
+    console.debug(`[Looping] Applying loop: Start=${start}, End=${end}`);
+
+    const videoElement = player.media; // Access the native <video> element
+
+    // Clear all existing listeners
+    videoElement.removeEventListener('timeupdate', loopHandler);
+
+    // Define a reusable handler
+    function loopHandler(event) {
+        if (event.target.currentTime >= end) {
+            console.debug(`[Looping] Restarting loop at: ${start}`);
+            event.target.currentTime = start;
+        }
+    }
+
+    // Add the new listener
+    videoElement.addEventListener('timeupdate', loopHandler);
+    console.debug('[Looping] New timeupdate listener added.');
+}
+
+function handleMoveAction(moveIndex, action) {
+    console.debug(`[Action] Received: Action=${action}, Move Index=${moveIndex}`);
+    
+    const move = movesData[moveIndex];
+    if (!move) {
+        console.error(`[Error] No move found for index: ${moveIndex}`);
+        return;
+    }
+    
+    console.debug('[Debug] Retrieved Move Data:', move);
+    
+    // Map actions to playback settings
+    if (action === 'loop') {
+        playVideo({
+            videoFilename: move.video_filename,
+            start: move.loop_start,
+            end: move.loop_end,
+            speed: move.loop_speed,
+            notes: move.notes,
+            isLooping: true
+        });
+    } else if (action === 'guide') {
+        playVideo({
+            videoFilename: move.video_filename,
+            start: move.guide_start,
+            speed: 1,
+            notes: move.notes,
+            isLooping: false
+        });
+    }
+}
+
+document.getElementById('moves-table-container').addEventListener('click', (event) => {
+    const clickedButton = event.target;
+
+    if (clickedButton.tagName === 'BUTTON') {
+        const action = clickedButton.textContent.trim().toLowerCase(); // Determine action (loop/guide)
+        const currentRow = clickedButton.closest('tr');
+        const moveIndex = currentRow?.dataset.index;
+
+        // Highlight the current row
+        document.querySelectorAll('#moves-table-container tbody tr').forEach(row => row.classList.remove('fw-bold'));
+        currentRow.classList.add('fw-bold');
+        console.debug(`[Action] Highlighted row with index: ${moveIndex}`);
+
+        // Handle the action
+        if (moveIndex) {
+            console.info(`[Event Listener] Button clicked. Action: ${action}, Move Index: ${moveIndex}`);
+            handleMoveAction(moveIndex, action);
+        } else {
+            console.error('[Event Listener] Move index not found in the current row.');
+        }
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     // Plyr initialization
     const videoElement = document.getElementById('player');
+
+    console.debug('Moves Data Loaded:', movesData);
 
     if (!videoElement) {
         console.error('[Error] Video element not found!');
@@ -212,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     });
 
-    console.log('[Debug] Plyr instance initialized:', player);
+    console.debug('[Debug] Plyr instance initialized:', player);
 
     // Ensure the player always has focus
     document.getElementById('player').focus();
@@ -234,19 +236,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'ArrowLeft': // Rewind by 1 or 5 seconds
                 player.currentTime = Math.max(0, player.currentTime - seekAmount);
-                console.log(`[Seek] Rewound by ${seekAmount} seconds. Current time: ${player.currentTime}`);
+                console.debug(`[Seek] Rewound by ${seekAmount} seconds. Current time: ${player.currentTime}`);
                 break;
             case 'ArrowRight': // Fast-forward by 1 or 5 seconds
                 player.currentTime = Math.min(player.duration, player.currentTime + seekAmount);
-                console.log(`[Seek] Fast-forwarded by ${seekAmount} seconds. Current time: ${player.currentTime}`);
+                console.debug(`[Seek] Fast-forwarded by ${seekAmount} seconds. Current time: ${player.currentTime}`);
                 break;
             case 'ArrowUp': // Increase volume
                 player.volume = Math.min(1, player.volume + 0.1);
-                console.log(`[Volume] Increased to: ${player.volume}`);
+                console.debug(`[Volume] Increased to: ${player.volume}`);
                 break;
             case 'ArrowDown': // Decrease volume
                 player.volume = Math.max(0, player.volume - 0.1);
-                console.log(`[Volume] Decreased to: ${player.volume}`);
+                console.debug(`[Volume] Decreased to: ${player.volume}`);
                 break;
         }
     });
@@ -267,14 +269,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Portrait Mode: Move video player between moves table and notes panel
             if (!movesTable.nextElementSibling?.contains(videoWrapper)) {
                 leftPanel.insertBefore(videoWrapper, notesSection);
-                console.log('Video player moved to left panel (portrait mode).');
+                console.debug('Video player moved to left panel (portrait mode).');
             }
         } else {
             // Landscape Mode: Move video player back to right panel
             const rightPanel = document.getElementById('right-panel');
             if (rightPanel && !rightPanel.contains(videoWrapper)) {
                 rightPanel.appendChild(videoWrapper);
-                console.log('Video player moved back to right panel (landscape mode).');
+                console.debug('Video player moved back to right panel (landscape mode).');
             }
         }
     }
@@ -290,9 +292,10 @@ document.addEventListener('DOMContentLoaded', () => {
     player.off('error');
 
     // Add logging for Plyr events
-    player.on('play', () => console.log(`[Event: Play] Playback started.`));
-    player.on('pause', () => console.log(`[Event: Pause] Playback paused.`));
-    player.on('seeked', () => console.log(`[Event: Seeked] Seek operation completed. Current time: ${player.currentTime}`));
-    player.on('ended', () => console.log(`[Event: Ended] Video playback ended.`));
+    console.debug('[Event Listeners] Reapplying Plyr event listeners.');
+    player.on('play', () => console.info(`[Event: Play] Playback started.`));
+    player.on('pause', () => console.info(`[Event: Pause] Playback paused.`));
+    player.on('seeked', () => console.info(`[Event: Seeked] Seek operation completed. Current time: ${player.currentTime}`));
+    player.on('ended', () => console.info(`[Event: Ended] Video playback ended.`));
     player.on('error', (error) => console.error(`[Event: Error]`, error));
 });

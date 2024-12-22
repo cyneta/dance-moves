@@ -16,10 +16,10 @@ html, body {
 /* Moves Table */
 #moves-table-container {
     height: 250px; 
+    width: 100%;
     overflow-y: auto; /* Enable scrolling inside the moves table */
     overflow-x: hidden; /* Prevent horizontal scrolling */
     border: 1px solid #ccc; /* Fine border for visual separation */
-    margin: 0.5rem; /* Add space below the moves table */
 }
 
 #moves-table-container table {
@@ -27,13 +27,16 @@ html, body {
     table-layout: auto; /* Allow columns to size naturally */
 }
 
-#moves-table-container th,
 #moves-table-container td {
     padding: 0.3rem; /* Compact padding for tighter layout */
     text-align: left; /* Left-align table content */
     white-space: nowrap; /* Prevent wrapping */
     overflow: hidden; /* Hide overflowing content */
     text-overflow: ellipsis; /* Add ellipsis for truncated content */
+}
+
+#moves-table-container td:first-child {
+    max-width: 150px;          /* Set a fixed width for the move name column */
 }
 
 /* Ensure buttons fit content */
@@ -145,7 +148,6 @@ html, body {
     }
 
     /* Hide 3rd column in moves table */
-    #moves-table-container table th:nth-child(3),
     #moves-table-container table td:nth-child(3) {
         display: none;
     }

@@ -44,37 +44,13 @@
                     <table class="table table-bordered table-striped table-hover mb-0">
                         <tbody>
                             {% for move in moves %}
-                            <tr data-video="{{ move['video_filename'] }}"> <!-- Store video filename in a data attribute -->
-                                <td title="{{ move['move_name'] }}" class="text-truncate" style="max-width: 150px;">{{ move['move_name'] }}</td>
-                                <td>
-                                    <button 
-                                        class="btn btn-primary btn-sm w-100"
-                                        onclick="loadVideo(
-                                            '{{ move['video_filename'] }}', 
-                                            {{ move['loop_start'] }}, 
-                                            {{ move['loop_end'] }}, 
-                                            {{ move['loop_speed'] }}, 
-                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}',
-                                            event
-                                        )">
-                                        Loop
-                                    </button>                                
-                                </td>
-                                <td>
-                                    <button 
-                                        class="btn btn-secondary btn-sm w-100"
-                                        onclick="playGuide(
-                                            '{{ move['video_filename'] }}', 
-                                            {{ move['guide_start'] }}, 
-                                            '{{ move['notes'] | replace("'", "\\'") | replace('"', '\\"') }}',
-                                            event
-                                        )">
-                                        Guide
-                                    </button>                                
-                                </td>
-                            </tr>
+                                <tr data-index="{{ loop.index0 }}">
+                                    <td>{{ move['move_name'] }}</td>
+                                    <td><button class="btn btn-primary btn-sm w-100">Loop</button></td>
+                                    <td><button class="btn btn-secondary btn-sm w-100">Guide</button></td>
+                                </tr>                            
                             {% endfor %}
-                        </tbody>                        
+                        </tbody>                                               
                     </table>
                 </div>
 
@@ -110,5 +86,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
     <script src="/static/js/dance_moves.js"></script>
+    <script>
+        // Initialize (filtered) movesData backend
+        const movesData = {{ moves | tojson | safe }};
+        console.log('Moves Data:', movesData);
+    </script>    
     </body>
 </html>
