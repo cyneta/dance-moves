@@ -13,6 +13,12 @@ html, body {
     overflow-y: auto; /* Enable vertical scrolling */
 }
 
+.dance-type-button {
+    padding: 0.5rem 0.25rem; /* Adjust top/bottom and left/right padding */
+    font-size: 1.0rem; /* Optionally reduce font size for a smaller appearance */
+    font-weight: bold;    
+}
+
 /* Moves Table */
 #moves-table-container {
     height: 250px; 
