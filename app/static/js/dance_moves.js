@@ -157,22 +157,18 @@ function applyLooping(start, end) {
     console.debug('[Looping] New timeupdate listener added.');
 }
 
-function updateMoveTable() {
-    const filteredMoves = activePlaylist
-        ? allMoves.filter(move => move.playlist_marker.includes(activePlaylist))
-        : allMoves;
-
+function updateMoveTable(moves = allMoves) {
     const moveTable = document.querySelector('#moves-table-container tbody');
     moveTable.innerHTML = '';
 
-    if (filteredMoves.length === 0) {
-        console.warn('[Move Table] No moves found for the active playlist.');
+    if (moves.length === 0) {
+        console.warn('[Move Table] No moves found for the active playlist or tag.');
         moveTable.innerHTML = '<tr><td colspan="3">No moves available.</td></tr>';
         return;
     }
 
-    filteredMoves.forEach((move, index) => {
-        const originalIndex = allMoves.indexOf(move); // Map back to the original `allMoves`
+    moves.forEach((move, index) => {
+        const originalIndex = allMoves.indexOf(move);
         const row = document.createElement('tr');
         row.setAttribute('data-index', originalIndex);
 
@@ -188,16 +184,25 @@ function updateMoveTable() {
     console.debug('[Move Table] Updated with filtered moves.');
 }
 
+function updateTagDropdown() {
+    const tags = [...new Set(
+        allMoves.flatMap(move => move.playlist_tags[activePlaylist] || [])
+    )];
+    const tagDropdownMenu = document.getElementById('tagDropdownMenu');
+    tagDropdownMenu.innerHTML = tags.length
+        ? tags.map(tag => `<li><a class="dropdown-item" href="#" data-tag="${tag}">${tag}</a></li>`).join('')
+        : '<li><a class="dropdown-item" href="#" data-tag="all">All</a></li>';
+
+    console.debug('[Tag Dropdown] Updated with tags:', tags);
+}
+
 function selectPlaylist(playlistName) {
     activePlaylist = playlistName;
-    
-    const playlistButtons = document.querySelectorAll('.playlist-button');
-    playlistButtons.forEach(button => {
-        button.classList.toggle('btn-primary', button.dataset.playlist === playlistName);
-        button.classList.toggle('btn-outline-primary', button.dataset.playlist !== playlistName);
-    });
-    
-    updateMoveTable();
+
+    const filteredMoves = allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0);
+    updateMoveTable(filteredMoves); // Updates the moves table
+    updateTagDropdown(); // Updates the tag dropdown menu
+
     console.info(`[Playlist] Active playlist updated to "${playlistName}".`);
 }
 
@@ -258,6 +263,30 @@ document.getElementById('moves-table-container').addEventListener('click', (even
     }
 });
 
+document.getElementById('tagDropdown').addEventListener('click', () => {
+    console.debug('[Tag Dropdown] Dropdown button clicked.');
+
+    // Simulate a manual toggle
+    const dropdownMenu = document.getElementById('tagDropdownMenu');
+    dropdownMenu.classList.toggle('show');
+});
+
+document.getElementById('tagDropdownMenu').addEventListener('click', (event) => {
+    const tag = event.target.dataset.tag;
+    if (!tag) return;
+
+    const filteredMoves = tag === 'all'
+        ? allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0)
+        : allMoves.filter(move => move.playlist_tags[activePlaylist]?.includes(tag));
+    updateMoveTable(filteredMoves);
+
+    console.info(`[Tag Filter] Selected tag: ${tag}`);
+
+    // Collapse the dropdown menu
+    const dropdownMenu = document.getElementById('tagDropdownMenu');
+    dropdownMenu.classList.toggle('hide');
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     console.debug('[App Init] DOM content loaded.');
 
@@ -284,7 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Default to the first playlist if not already set
     const defaultPlaylist = playlistButtons[0]?.dataset.playlist || '';
-    console.debug(`[App Init] Default playlist: ${defaultPlaylist}`);
     selectPlaylist(defaultPlaylist);
 
     // Ensure moves data is available
@@ -299,15 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!videoElement) {
         console.warn('[App Init] No video element found on initial load.');
     } else {
-        if (player) {
-            player.destroy();
-        }
-
+        if (player) player.destroy();
         player = new Plyr(videoElement, {
             controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
         });
-
-        console.debug('[Player Initialized] Plyr instance is ready.');
     }
 
     // Add keyboard controls for the player
@@ -356,10 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const notesSection = document.querySelector('.card');
 
     function handleOrientationChange() {
-        if (!videoWrapper) {
-            console.warn('[Orientation Change] Video wrapper is not defined.');
-            return;
-        }
+        if (!videoWrapper) return;
 
         if (window.innerHeight > window.innerWidth) {
             if (!movesTable.nextElementSibling?.contains(videoWrapper)) {

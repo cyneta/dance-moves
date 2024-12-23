@@ -24,6 +24,24 @@ app = Flask(
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
+# Fixed columns to exclude from playlist processing
+fixed_columns = [
+    'move_name', 'move_type', 'level', 'video_source', 'video_id', 'video_link', 
+    'video_filename', 'loop_start', 'loop_end', 'loop_speed', 'guide_start', 'notes'
+]
+
+def generate_playlist_tags(move_row, playlist_columns):
+    """
+    Generate a dictionary of playlists and their associated tags for a given move row.
+    """
+    playlist_tags = {}
+    for col in playlist_columns:
+        if not pd.isna(move_row[col]):
+            # Capture tags by splitting on commas and trimming whitespace
+            tags = [tag.strip() for tag in str(move_row[col]).split(',')]
+            playlist_tags[col] = tags
+    return playlist_tags
+
 def fetch_sheet_data(sheet_url):
     """
     Fetch data from a public Google Sheet in CSV format and return it as a DataFrame.
@@ -161,7 +179,6 @@ def playlist(dance_type):
     """
     Provide all playlists and moves for a given dance type.
     """
-
     # Google Sheets CSV export URLs for each dance type
     sheet_urls = {
         'salsa': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=886932256",
@@ -181,20 +198,18 @@ def playlist(dance_type):
         return f"No data available for dance type '{dance_type}'!", 500
 
     # Detect playlist columns
-    fixed_columns = [
-        'move_name', 'move_type', 'level', 'video_source', 'video_id', 'video_link', 'video_filename',
-        'loop_start', 'loop_end', 'loop_speed', 'guide_start', 'notes'
-    ]
-
-    # Exclude playlist columns that start with a '-'
     playlist_columns = [
         col for col in data.columns if col not in fixed_columns and not col.startswith('-')
     ]
+    logging.debug(f"Detected playlist columns: {playlist_columns}")
 
-    # Add the playlist marker for each move
-    data['playlist_marker'] = data[playlist_columns].apply(lambda row: ', '.join(row.dropna().index), axis=1)
+    # Apply the function to generate `playlist_tags`
+    data['playlist_tags'] = data.apply(
+        lambda move_row: generate_playlist_tags(move_row, playlist_columns), axis=1
+    )
+    logging.debug(f"Generated playlist_tags: {data['playlist_tags'].head()}")
 
-    # Process all moves
+    # Process moves
     data[['loop_start', 'loop_end', 'loop_speed', 'guide_start']] = data.apply(
         lambda row: pd.Series(process_move(row)), axis=1
     )
@@ -205,7 +220,7 @@ def playlist(dance_type):
         moves=data.to_dict('records'),
         playlists=[(col, re.sub(r'^\d+', '', col).strip()) for col in playlist_columns],
         dance_type=dance_type.capitalize()
-)
+    )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
