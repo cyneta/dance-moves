@@ -271,18 +271,41 @@ document.getElementById('tagDropdown').addEventListener('click', () => {
     dropdownMenu.classList.toggle('show');
 });
 
+function updateTagDropdown() {
+    // Gather unique tags across all moves in the active playlist
+    const tags = [
+        'all tags',
+        ...new Set(
+            allMoves.flatMap(move => move.playlist_tags[activePlaylist] || [])
+        ),
+    ];
+
+    const tagDropdownMenu = document.getElementById('tagDropdownMenu');
+    tagDropdownMenu.innerHTML = tags.length
+        ? tags.map(tag => `<li><a class="dropdown-item" href="#" data-tag="${tag}">${tag}</a></li>`).join('')
+        : '<li><a class="dropdown-item" href="#" data-tag="all">All Tags</a></li>';
+
+    console.debug('[Tag Dropdown] Updated with tags:', tags);
+}
+
+// Handle tag selection
 document.getElementById('tagDropdownMenu').addEventListener('click', (event) => {
     const tag = event.target.dataset.tag;
     if (!tag) return;
 
     // Update the dropdown button text to reflect the selected tag
     const tagDropdownButton = document.getElementById('tagDropdown');
-    tagDropdownButton.innerText = tag === 'all' ? 'Filter by Tag' : `Tag: ${tag}`;
+    tagDropdownButton.innerText = tag === 'all tags' ? 'Tag: all tags' : `Tag: ${tag}`;
 
     // Filter moves based on the selected tag
-    const filteredMoves = tag === 'all'
-        ? allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0)
-        : allMoves.filter(move => move.playlist_tags[activePlaylist]?.includes(tag));
+    let filteredMoves;
+    if (tag === 'all tags') {
+        // Compute union of all tags for the active playlist
+        filteredMoves = allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0);
+    } else {
+        filteredMoves = allMoves.filter(move => move.playlist_tags[activePlaylist]?.includes(tag));
+    }
+
     updateMoveTable(filteredMoves);
 
     console.info(`[Tag Filter] Selected tag: ${tag}`);
