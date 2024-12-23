@@ -287,6 +287,28 @@ document.getElementById('tagDropdownMenu').addEventListener('click', (event) => 
     dropdownMenu.classList.toggle('hide');
 });
 
+document.querySelectorAll('.playlist-button').forEach(button => {
+    button.addEventListener('click', () => {
+        // Remove active state from all buttons
+        document.querySelectorAll('.playlist-button').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+        });
+
+        // Add active state to the clicked button
+        button.classList.add('btn-primary');
+        button.classList.remove('btn-outline-primary');
+
+        const playlistName = button.dataset.playlist;
+        if (playlistName) {
+            console.info(`[Playlist] Button clicked for playlist: ${playlistName}`);
+            selectPlaylist(playlistName);
+        } else {
+            console.error('[Playlist] Button missing data-playlist attribute.');
+        }
+    });
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     console.debug('[App Init] DOM content loaded.');
 
