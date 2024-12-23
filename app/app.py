@@ -219,7 +219,7 @@ def playlist(dance_type):
         'moves.html',
         moves=data.to_dict('records'),
         playlists=[(col, re.sub(r'^\d+', '', col).strip()) for col in playlist_columns],
-        dance_type=dance_type.capitalize()
+        dance_type=dance_type.lower()
     )
 
 if __name__ == "__main__":
