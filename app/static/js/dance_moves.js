@@ -275,6 +275,11 @@ document.getElementById('tagDropdownMenu').addEventListener('click', (event) => 
     const tag = event.target.dataset.tag;
     if (!tag) return;
 
+    // Update the dropdown button text to reflect the selected tag
+    const tagDropdownButton = document.getElementById('tagDropdown');
+    tagDropdownButton.innerText = tag === 'all' ? 'Filter by Tag' : `Tag: ${tag}`;
+
+    // Filter moves based on the selected tag
     const filteredMoves = tag === 'all'
         ? allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0)
         : allMoves.filter(move => move.playlist_tags[activePlaylist]?.includes(tag));
@@ -282,9 +287,9 @@ document.getElementById('tagDropdownMenu').addEventListener('click', (event) => 
 
     console.info(`[Tag Filter] Selected tag: ${tag}`);
 
-    // Collapse the dropdown menu
-    const dropdownMenu = document.getElementById('tagDropdownMenu');
-    dropdownMenu.classList.toggle('hide');
+    // Collapse the dropdown menu after selection
+    const dropdown = bootstrap.Dropdown.getInstance(tagDropdownButton);
+    if (dropdown) dropdown.hide(); // Bootstrap's built-in dropdown hide method
 });
 
 document.querySelectorAll('.playlist-button').forEach(button => {
