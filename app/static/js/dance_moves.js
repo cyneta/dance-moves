@@ -1,5 +1,7 @@
 console.debug('[Debug] Script version: 1.1.0');
 
+const DEFAULT_TAG = 'no filter';
+
 const speeds = [
     0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.57, 0.63, 0.7, 0.8,
     0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.8, 2.0
@@ -201,8 +203,6 @@ function updateTagDropdown() {
     console.debug('[Tag Dropdown] Updated with tags:', tags);
 }
 
-const DEFAULT_TAG = 'no filter';
-
 const tagFilter = {
     currentTag: DEFAULT_TAG,
 
@@ -302,10 +302,6 @@ document.getElementById('moves-table-container').addEventListener('click', (even
 
 document.getElementById('tagDropdown').addEventListener('click', () => {
     console.debug('[Tag Dropdown] Dropdown button clicked.');
-
-    // Simulate a manual toggle
-    const dropdownMenu = document.getElementById('tagDropdownMenu');
-    dropdownMenu.classList.toggle('show');
 });
 
 function updateTagDropdown() {
@@ -410,6 +406,19 @@ document.addEventListener('DOMContentLoaded', () => {
         player = new Plyr(videoElement, {
             controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
         });
+
+        console.debug('[Player Event Listeners] Applying Plyr event listeners.');
+        player.on('play', () => console.info(`[Player Event: Play] Playback started.`));
+        player.on('pause', () => console.info(`[Player Event: Pause] Playback paused.`));
+        player.on('seeked', () => console.info(`[Player Event: Seeked] Seek operation completed. Current time: ${player.currentTime}`));
+        player.on('ended', () => console.info(`[Player Event: Ended] Video playback ended.`));
+        player.on('error', (error) => {
+            console.error(`[Player Event: Error] Playback issue at currentTime=${player.currentTime}`, error);
+            player.pause();
+            document.getElementById('player-placeholder').style.display = 'block';
+            document.getElementById('player').style.display = 'none';
+            displayNotes("An error occurred during playback. Please select a different move or check the video file.");
+        });
     }
 
     // Show instructions when the page loads or dance style changes
@@ -466,10 +475,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tag) return;
 
         tagFilter.setTag(tag);
-
-        // Collapse the dropdown menu after selection
-        const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('tagDropdown'));
-        if (dropdown) dropdown.hide();
+    
+        console.info(`[Tag Filter] Selected tag: ${tag}`);
     });
 
     // Attach event listener to speed slider
@@ -505,19 +512,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     handleOrientationChange();
     window.addEventListener('resize', handleOrientationChange);
-
-    if (player) {
-        player.off('play');
-        player.off('pause');
-        player.off('seeked');
-        player.off('ended');
-        player.off('error');
-
-        console.debug('[Event Listeners] Reapplying Plyr event listeners.');
-        player.on('play', () => console.info(`[Event: Play] Playback started.`));
-        player.on('pause', () => console.info(`[Event: Pause] Playback paused.`));
-        player.on('seeked', () => console.info(`[Event: Seeked] Seek operation completed. Current time: ${player.currentTime}`));
-        player.on('ended', () => console.info(`[Event: Ended] Video playback ended.`));
-        player.on('error', (error) => console.error(`[Event: Error]`, error));
-    }
 });

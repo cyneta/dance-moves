@@ -13,6 +13,10 @@ html, body {
     overflow-y: auto; /* Enable vertical scrolling */
 }
 
+.fw-bold {
+    font-weight: bold;
+}
+
 /* General Primary Button (Selected State) */
 .btn-primary {
     background-color: #007bff;
@@ -64,11 +68,6 @@ html, body {
     border-color: #007bff;
 }
 
-#tagDropdownMenu .dropdown-item:hover {
-    background-color: #f0f0f0;
-    color: #007bff;
-}
-
 /* Moves Table */
 #moves-table-container {
     height: 170px; 
@@ -100,10 +99,6 @@ html, body {
     width: auto; /* Fit button width to content */
     padding: 0.25rem 0.5rem; /* Compact padding */
     margin: 0;
-}
-
-.fw-bold {
-    font-weight: bold;
 }
 
 #speed-control {
