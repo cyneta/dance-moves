@@ -201,13 +201,44 @@ function updateTagDropdown() {
     console.debug('[Tag Dropdown] Updated with tags:', tags);
 }
 
+const DEFAULT_TAG = 'no filter';
+
+const tagFilter = {
+    currentTag: DEFAULT_TAG,
+
+    setTag(tag) {
+        this.currentTag = tag || DEFAULT_TAG;
+
+        const tagDropdownButton = document.getElementById('tagDropdown');
+        tagDropdownButton.innerText = tag === DEFAULT_TAG ? `Tag filter: ${DEFAULT_TAG}` : `Tag filter: ${tag}`;
+
+        this.applyFilter();
+    },
+
+    applyFilter() {
+        const moves = this.currentTag === DEFAULT_TAG
+            ? allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0)
+            : allMoves.filter(move => move.playlist_tags[activePlaylist]?.includes(this.currentTag));
+
+        updateMoveTable(moves);
+        console.info(`[Tag Filter] Applied: ${this.currentTag}`);
+    },
+
+    reset() {
+        this.setTag(DEFAULT_TAG);
+    }
+};
+
 function selectPlaylist(playlistName) {
     activePlaylist = playlistName;
     isSpeedOverride = false; // Reset speed override when changing playlists
 
+    // Reset tag filter
+    tagFilter.reset();
+
     const filteredMoves = allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0);
-    updateMoveTable(filteredMoves); // Updates the moves table
-    updateTagDropdown(); // Updates the tag dropdown menu
+    updateMoveTable(filteredMoves);
+    updateTagDropdown();
 
     console.info(`[Playlist] Active playlist updated to "${playlistName}".`);
 }
@@ -280,7 +311,7 @@ document.getElementById('tagDropdown').addEventListener('click', () => {
 function updateTagDropdown() {
     // Gather unique tags across all moves in the active playlist
     const tags = [
-        'all tags',
+        DEFAULT_TAG,
         ...new Set(
             allMoves.flatMap(move => move.playlist_tags[activePlaylist] || [])
         ),
@@ -293,33 +324,6 @@ function updateTagDropdown() {
 
     console.debug('[Tag Dropdown] Updated with tags:', tags);
 }
-
-// Handle tag selection
-document.getElementById('tagDropdownMenu').addEventListener('click', (event) => {
-    const tag = event.target.dataset.tag;
-    if (!tag) return;
-
-    // Update the dropdown button text to reflect the selected tag
-    const tagDropdownButton = document.getElementById('tagDropdown');
-    tagDropdownButton.innerText = tag === 'all tags' ? 'Tag: all tags' : `Tag: ${tag}`;
-
-    // Filter moves based on the selected tag
-    let filteredMoves;
-    if (tag === 'all tags') {
-        // Compute union of all tags for the active playlist
-        filteredMoves = allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0);
-    } else {
-        filteredMoves = allMoves.filter(move => move.playlist_tags[activePlaylist]?.includes(tag));
-    }
-
-    updateMoveTable(filteredMoves);
-
-    console.info(`[Tag Filter] Selected tag: ${tag}`);
-
-    // Collapse the dropdown menu after selection
-    const dropdown = bootstrap.Dropdown.getInstance(tagDropdownButton);
-    if (dropdown) dropdown.hide(); // Bootstrap's built-in dropdown hide method
-});
 
 document.querySelectorAll('.playlist-button').forEach(button => {
     button.addEventListener('click', () => {
@@ -345,6 +349,9 @@ document.querySelectorAll('.playlist-button').forEach(button => {
 
 document.addEventListener('DOMContentLoaded', () => {
     console.debug('[App Init] DOM content loaded.');
+
+    // Initialize tag filter
+    tagFilter.reset();
 
     // Initialize playlist buttons
     const playlistButtons = document.querySelectorAll('.playlist-button');
@@ -421,6 +428,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.debug(`[Volume] Decreased to: ${player.volume}`);
                 break;
         }
+    });
+
+    // Handle tag selection
+    document.getElementById('tagDropdownMenu').addEventListener('click', (event) => {
+        const tag = event.target.dataset.tag;
+        if (!tag) return;
+
+        tagFilter.setTag(tag);
+
+        // Collapse the dropdown menu after selection
+        const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('tagDropdown'));
+        if (dropdown) dropdown.hide();
     });
 
     // Attach event listener to speed slider
