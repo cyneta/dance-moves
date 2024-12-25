@@ -347,6 +347,22 @@ document.querySelectorAll('.playlist-button').forEach(button => {
     });
 });
 
+function showInstructions(text) {
+    const overlay = document.querySelector('.instructions-overlay');
+    const instructionsText = `
+        <ol>
+            ${text.map(item => `<li>${item}</li>`).join('')}
+        </ol>
+    `;
+    overlay.innerHTML = `<div class="instructions-text">${instructionsText}</div>`;
+    overlay.style.display = 'flex';
+}
+
+function hideInstructions() {
+    const overlay = document.querySelector('.instructions-overlay');
+    overlay.style.display = 'none';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     console.debug('[App Init] DOM content loaded.');
 
@@ -395,6 +411,20 @@ document.addEventListener('DOMContentLoaded', () => {
             controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
         });
     }
+
+    // Show instructions when the page loads or dance style changes
+    const instructions = [
+        "Pick a dance style to practice.",
+        "Select a playlist on the left.",
+        "Choose a move from the list.",
+        "Press 'Loop' or 'Guide' for targeted practice.",
+        "Use the speed control to adjust playback."
+    ];
+
+    showInstructions(instructions);
+
+    // Hide instructions when the video starts playing
+    player.on('play', hideInstructions);
 
     // Add keyboard controls for the player
     document.addEventListener('keydown', (event) => {
