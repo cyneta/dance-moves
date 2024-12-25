@@ -7,6 +7,7 @@ const speeds = [
 
 let player;
 let activePlaylist = ""; // Tracks the currently selected playlist
+let isSpeedOverride = false; // Tracks if the speed slider is overriding move speeds
 
 // allMoves is already declared in the HTML and accessible globally
 console.debug('Loaded allMoves from HTML:', allMoves);
@@ -52,12 +53,16 @@ function playVideo({ videoFilename, start, end = null, speed = 1, notes = '', is
     console.debug(`[Play Video] Video source: ${videoSrc}`);
     console.info(`[Play Video] Playing video "${videoFilename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
 
+    // Use slider speed if override is active
+    const sliderValue = parseInt(document.getElementById('speed-slider').value, 10);
+    const finalSpeed = isSpeedOverride ? speeds[sliderValue] : speed;
+
     try {
         const currentSrc = player.source?.sources?.[0]?.src;
 
         if (currentSrc === videoSrc) {
             console.debug('[Play Video] Source unchanged, skipping reload');
-            executePlayback(start, end, speed, notes, isLooping);
+            executePlayback(start, end, finalSpeed, notes, isLooping);
             return;
         }
 
@@ -69,7 +74,7 @@ function playVideo({ videoFilename, start, end = null, speed = 1, notes = '', is
 
         player.once('loadedmetadata', () => {
             console.debug(`[Play Video] Metadata loaded for "${videoFilename}". Preparing playback.`);
-            executePlayback(start, end, speed, notes, isLooping);
+            executePlayback(start, end, finalSpeed, notes, isLooping);
         });
 
         player.once('error', (error) => {
@@ -198,6 +203,7 @@ function updateTagDropdown() {
 
 function selectPlaylist(playlistName) {
     activePlaylist = playlistName;
+    isSpeedOverride = false; // Reset speed override when changing playlists
 
     const filteredMoves = allMoves.filter(move => move.playlist_tags[activePlaylist]?.length > 0);
     updateMoveTable(filteredMoves); // Updates the moves table
@@ -419,9 +425,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach event listener to speed slider
     document.getElementById('speed-slider').addEventListener('input', (event) => {
-        updateSpeed(event.target.value);
+        const sliderValue = parseInt(event.target.value, 10);
+        updateSpeed(sliderValue);
+        isSpeedOverride = true; // Activate override mode
+        console.info('[Speed Override] Activated by slider adjustment.');
     });
-
+       
     // Handle orientation changes for video player
     const videoWrapper = document.getElementById('player-wrapper');
     const leftPanel = document.getElementById('left-panel');

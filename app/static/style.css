@@ -64,6 +64,11 @@ html, body {
     border-color: #007bff;
 }
 
+#tagDropdownMenu .dropdown-item:hover {
+    background-color: #f0f0f0;
+    color: #007bff;
+}
+
 /* Moves Table */
 #moves-table-container {
     height: 170px; 
