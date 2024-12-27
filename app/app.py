@@ -4,15 +4,13 @@ import logging
 import requests
 import io
 import pandas as pd
-from flask import Flask, send_from_directory, render_template, request, redirect, Response
+import mimetypes
+from flask import Flask, jsonify, send_from_directory, render_template, request, redirect, Response
 from datetime import datetime, timedelta
 from urllib.parse import unquote
 
-# Adjust pandas display options for debugging
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_colwidth', None)
-pd.set_option('display.width', 1000)
+# Ensure correct MIME type for JavaScript modules
+mimetypes.add_type('application/javascript', '.js')
 
 # Initialize Flask app
 app = Flask(
@@ -76,74 +74,91 @@ def get_valid_numeric_value(value, default, field_name, move_name, lower_bound=N
     """
     Handles missing or invalid numeric values for a given field.
     Applies a default, ensures range, and logs adjustments.
-    Converts 'mm:ss' formatted strings to seconds if necessary.
     """
     if pd.isna(value) or value == '':
         logging.info(f"[Default Applied] Move '{move_name}': {field_name} set to {default}")
         return default
 
-    # Convert value using time_to_seconds if applicable
     try:
-        numeric_value = time_to_seconds(value) if isinstance(value, str) and ':' in value else float(value)
+        numeric_value = float(value)
 
-        # Validate against lower and upper bounds
+        # Enforce lower bound
         if lower_bound is not None and numeric_value < lower_bound:
-            logging.warning(f"Move Data Validation: '{move_name}': {field_name} adjusted from {numeric_value} to {lower_bound}")
+            logging.warning(f"[Bounds Adjusted] Move '{move_name}': {field_name} adjusted to lower bound {lower_bound}")
             return lower_bound
+
+        # Enforce upper bound
         if upper_bound is not None and numeric_value > upper_bound:
-            logging.warning(f"Move Data Validation: '{move_name}': {field_name} adjusted from {numeric_value} to {upper_bound}")
+            logging.warning(f"[Bounds Adjusted] Move '{move_name}': {field_name} adjusted to upper bound {upper_bound}")
             return upper_bound
 
         return numeric_value
     except (ValueError, TypeError):
-        logging.error(f"Move Data Validation: '{move_name}': Invalid value for {field_name}: {value}. Using default: {default}")
+        logging.error(f"[Invalid Value] Move '{move_name}': {field_name} invalid value '{value}', defaulting to {default}")
         return default
 
-def process_move(row):
+def process_row(row):
     """
-    Process a single row to enforce bounds, validate ranges, and log adjustments.
+    Processes a single row, applying defaults, sanitization, and bounds checking for all columns.
     """
-    move_name = row.get('move_name', 'Unknown Move')
+    defaults = {
+        "move_name": "Unnamed Move",
+        "move_type": "",
+        "level": "",
+        "video_source": "",
+        "video_id": "",
+        "video_link": "",
+        "video_filename": "",
+        "loop_start": 0,
+        "loop_end": 10,
+        "loop_speed": 1,
+        "guide_start": 0,
+        "notes": "No notes for this move.",
+    }
 
-    # Handle loop_start
-    loop_start = get_valid_numeric_value(
-        value=row.get('loop_start'),
+    processed = {}
+
+    # Apply defaults and sanitize
+    for key, value in row.items():
+        processed[key] = defaults.get(key, "") if pd.isna(value) else value
+
+    move_name = processed["move_name"]
+
+    # Validate numeric fields
+    processed["loop_start"] = get_valid_numeric_value(
+        value=processed["loop_start"],
         default=0,
-        field_name='loop_start',
+        field_name="loop_start",
         move_name=move_name,
         lower_bound=0
     )
 
-    # Handle loop_end
-    loop_end = get_valid_numeric_value(
-        value=row.get('loop_end'),
-        default=loop_start + 10,
-        field_name='loop_end',
+    processed["loop_end"] = get_valid_numeric_value(
+        value=processed["loop_end"],
+        default=processed["loop_start"] + 10,
+        field_name="loop_end",
         move_name=move_name,
-        lower_bound=loop_start + 5
+        lower_bound=processed["loop_start"] + 5
     )
 
-    # Validate loop_speed
-    loop_speed = get_valid_numeric_value(
-        value=row.get('loop_speed'),
+    processed["loop_speed"] = get_valid_numeric_value(
+        value=processed["loop_speed"],
         default=1,
-        field_name='loop_speed',
+        field_name="loop_speed",
         move_name=move_name,
         lower_bound=0.25,
         upper_bound=2
     )
 
-    # Handle guide_start
-    guide_start = get_valid_numeric_value(
-        value=row.get('guide_start'),
+    processed["guide_start"] = get_valid_numeric_value(
+        value=processed["guide_start"],
         default=0,
-        field_name='guide_start',
+        field_name="guide_start",
         move_name=move_name,
         lower_bound=0
     )
 
-    # Return processed values
-    return loop_start, loop_end, loop_speed, guide_start
+    return processed
 
 @app.route('/')
 def home():
@@ -177,8 +192,25 @@ def serve_video(filename):
 @app.route('/<dance_type>/')
 def playlist(dance_type):
     """
-    Provide all playlists and moves for a given dance type.
+    Render the HTML page for the given dance type.
     """
+    valid_dance_types = ['salsa', 'bachata', 'ecs', 'wcs', 'zouk']
+    
+    # Validate dance type
+    if dance_type.lower() not in valid_dance_types:
+        logging.error(f"Unsupported dance type: {dance_type}")
+        return f"Dance type '{dance_type}' not supported!", 404
+
+    # Render the page; data will be fetched via the API
+    return render_template('moves.html', dance_type=dance_type.lower())
+
+@app.route('/api/moves/<dance_type>')
+def get_moves(dance_type):
+    """
+    API endpoint to provide moves and playlists for the given dance type in JSON format.
+    """
+    logging.debug(f"Fetching moves for dance type: {dance_type}")
+
     # Google Sheets CSV export URLs for each dance type
     sheet_urls = {
         'salsa': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=886932256",
@@ -187,15 +219,18 @@ def playlist(dance_type):
         'wcs': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=2088273102",
         'zouk': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=617690693",
     }
+
+    # Validate dance type
     sheet_url = sheet_urls.get(dance_type.lower())
     if not sheet_url:
         logging.error(f"Unsupported dance type: {dance_type}")
-        return f"Dance type '{dance_type}' not supported!", 404
+        return jsonify({"error": "Unsupported dance type. Available types are: salsa, bachata, ecs, wcs, zouk"}), 404
 
+    # Fetch the data
     data = fetch_sheet_data(sheet_url)
     if data.empty:
         logging.error(f"No data available for dance type: {dance_type}")
-        return f"No data available for dance type '{dance_type}'!", 500
+        return jsonify({"error": f"No data available for dance type '{dance_type}'!"}), 500
 
     # Detect playlist columns
     playlist_columns = [
@@ -203,24 +238,22 @@ def playlist(dance_type):
     ]
     logging.debug(f"Detected playlist columns: {playlist_columns}")
 
-    # Apply the function to generate `playlist_tags`
+    # Generate playlist tags
     data['playlist_tags'] = data.apply(
         lambda move_row: generate_playlist_tags(move_row, playlist_columns), axis=1
     )
-    logging.debug(f"Generated playlist_tags: {data['playlist_tags'].head()}")
 
-    # Process moves
-    data[['loop_start', 'loop_end', 'loop_speed', 'guide_start']] = data.apply(
-        lambda row: pd.Series(process_move(row)), axis=1
-    )
-    data['notes'] = data['notes'].fillna("No notes for this move.")
+    # Process each row using `process_row`
+    data = pd.DataFrame(data.apply(process_row, axis=1).tolist())
 
-    return render_template(
-        'moves.html',
-        moves=data.to_dict('records'),
-        playlists=[(col, re.sub(r'^\d+', '', col).strip()) for col in playlist_columns],
-        dance_type=dance_type.lower()
-    )
+    # Replace NaN values with empty strings for JSON compatibility
+    sanitized_data = data.fillna("")  # Use empty strings for missing values
+
+    response = {
+        "moves": sanitized_data.to_dict('records'),
+        "playlists": [col for col in playlist_columns],
+    }
+    return jsonify(response)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
