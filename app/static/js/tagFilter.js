@@ -1,6 +1,5 @@
 // tagFilter.js
 "use strict";
-import { trigger } from './common.js';
 import { updateMoveTable } from './movesTable.js';
 import { allMoves } from './index.js';
 
@@ -28,7 +27,6 @@ export const tagFilter = {
         console.debug('[Tag Filter] Filtered moves for tag and playlist:', filteredMoves);
 
         updateMoveTable(filteredMoves);
-        trigger('tagFilterChange', { playlist, tag });
     },
 };
 

@@ -1,7 +1,7 @@
 // player.js
 "use strict";
-import { on, trigger } from './common.js';
 import { allMoves } from './index.js';
+import { on } from './common.js';
 
 console.debug('[Global] player.js loaded');
 
@@ -48,10 +48,6 @@ export function initializePlayer(videoElement) {
     player = new Plyr(videoElement, {
         controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
     });
-
-    // Handle Playback Events
-    player.on('play', () => trigger('playbackStarted'));
-    player.on('ended', () => trigger('playbackEnded'));
 
     console.debug('[Player] Initialized.');
 }
@@ -176,10 +172,6 @@ function hideInstructions() {
 export function initializePlayerUI() {
     console.debug('[Player UI] Initializing...');
 
-    // Setup player events
-    on('playbackStarted', () => console.info('[App Event] Playback started.'));
-    on('playbackEnded', () => console.info('[App Event] Playback ended.'));
-
     // Player instructions
     const instructions = [
         "Pick a dance style to practice.",
@@ -190,20 +182,84 @@ export function initializePlayerUI() {
     ];
     showInstructions(instructions);
 
-    // Hide instructions on video playback
+    // Initialize player
+    const videoElement = document.getElementById('player');
+    if (!videoElement) {
+        console.error('[Player UI] No video element found for player initialization.');
+        return;
+    }
+
+    initializePlayer(videoElement);
+
+    // Attach hideInstructions to player's play event after initialization
     if (player) {
         player.on('play', hideInstructions);
+        console.debug('[Player UI] Attached hideInstructions to player "play" event.');
     } else {
         console.warn('[Player UI] Player not initialized. Cannot attach hideInstructions.');
     }
 
-    // Initialize player
-    const videoElement = document.getElementById('player');
-    if (videoElement) {
-        initializePlayer(videoElement);
-    } else {
-        console.error('[Player UI] No video element found for player initialization.');
-    }
+    // Handle moveAction events
+    on('moveAction', ({ moveIndex, action }) => {
+        console.debug('[moveAction] Event triggered with parameters:', { moveIndex, action });
+    
+        // Fetch the move by index
+        const move = allMoves[moveIndex];
+        if (!move) {
+            console.error(`[Player] No move found for index ${moveIndex}.`);
+            console.debug('[Player] All available moves:', allMoves);
+            return;
+        }
+    
+        console.debug('[Player] Move data retrieved:', move);
+    
+        // Destructure the move data
+        const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
+        console.debug('[Player] Extracted move properties:', {
+            video_filename, loop_start, loop_end, loop_speed, guide_start, notes
+        });
+    
+        // Determine playback speed
+        const speed = determinePlaybackSpeed(action, loop_speed);
+        console.debug('[Player] Determined playback speed:', speed);
+    
+        // Update the speed slider
+        const slider = document.getElementById('speed-slider');
+        if (!slider) {
+            console.error('[Player] Speed slider not found in the DOM.');
+            return;
+        }
+        const sliderIndex = speeds.indexOf(speed);
+    
+        if (sliderIndex === -1) {
+            console.error('[Player] Speed not found in predefined speeds:', speed);
+            console.debug('[Player] Predefined speeds:', speeds);
+            return;
+        }
+    
+        console.debug('[Player] Updating speed slider to index:', sliderIndex);
+        slider.value = sliderIndex;
+        slider.dispatchEvent(new Event('input'));
+    
+        // Play the video
+        console.debug('[Player] Preparing to play video with parameters:', {
+            videoFilename: video_filename,
+            start: action === 'loop' ? loop_start : guide_start,
+            end: action === 'loop' ? loop_end : null,
+            speed,
+            notes,
+            isLooping: action === 'loop'
+        });
+    
+        playVideo({
+            videoFilename: video_filename,
+            start: action === 'loop' ? loop_start : guide_start,
+            end: action === 'loop' ? loop_end : null,
+            speed,
+            notes,
+            isLooping: action === 'loop',
+        });
+    });
 
     console.info('[Player UI] Initialization complete.');
 }

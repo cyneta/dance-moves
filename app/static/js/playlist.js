@@ -1,5 +1,4 @@
 "use strict";
-import { trigger } from './common.js';
 import { updateMoveTable } from './movesTable.js';
 import { updateTagFilter } from './tagFilter.js';
 import { allPlaylists } from './index.js';
@@ -27,8 +26,6 @@ export function selectPlaylist(playlistName) {
 
     updateMoveTable(filteredMoves);
     updateTagFilter(playlistName);
-
-    trigger('playlistChange', playlistName);
 }
 
 // Setup Playlist Buttons
