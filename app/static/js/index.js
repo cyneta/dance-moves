@@ -3,6 +3,10 @@ import { setupPlaylistButtons, initializePlaylists } from './playlist.js';
 import { setupMovesTable, updateMoveTable } from './movesTable.js';
 import { initializePlayerUI } from './player.js';
 
+// Export global variables
+export let allMoves = [];
+export let allPlaylists = [];
+
 console.debug('[Global] index.js loaded.');
 
 async function fetchDanceData(danceType) {
@@ -21,18 +25,20 @@ async function fetchDanceData(danceType) {
 }
 
 async function initializeApp(danceType) {
-    const { playlists, moves } = await fetchDanceData(danceType);
+    // Fetch data and set globals
+    ({ playlists: allPlaylists, moves: allMoves } = await fetchDanceData(danceType));
 
-    console.debug('[Index] Initializing app with:', { moves, playlists });
+    // Set global variables
+    console.debug('[Index] Globals initialized:', { allMoves, allPlaylists });
 
-    // Initialize components with the fetched data
-    setupPlaylistButtons(playlists, moves);
-    initializePlaylists(playlists, moves);
-    setupMovesTable(moves);
+    // Initialize components
+    setupPlaylistButtons();
+    initializePlaylists();
+    setupMovesTable();
     initializePlayerUI();
 
     // Populate the moves table with initial data
-    updateMoveTable(moves);
+    // updateMoveTable();
 
     console.info('[Index] All modules initialized.');
 }

@@ -2,6 +2,7 @@
 "use strict";
 import { trigger } from './common.js';
 import { updateMoveTable } from './movesTable.js';
+import { allMoves } from './index.js';
 
 console.debug('[Global] tagFilter.js loaded');
 
@@ -10,43 +11,34 @@ export const DEFAULT_TAG = 'no filter';
 export const tagFilter = {
     currentTag: DEFAULT_TAG,
 
-    setTag(tag, moves, playlist) {
+    setTag(tag, playlist) {
         console.debug(`[Tag Filter] setTag called with tag: ${tag}`);
         this.currentTag = tag || DEFAULT_TAG;
 
-        const tagDropdownButton = document.getElementById('tagDropdown');
-        tagDropdownButton.innerText = tag === DEFAULT_TAG ? `Tag filter: ${DEFAULT_TAG}` : `Tag filter: ${tag}`;
+        const filteredMoves = allMoves.filter(move => {
+            if (playlist && !move.playlist_tags?.[playlist]?.length) {
+                return false;
+            }
+            if (tag !== DEFAULT_TAG && !move.playlist_tags?.[playlist]?.includes(tag)) {
+                return false;
+            }
+            return true;
+        });
 
-        this.applyFilter(moves, playlist);
-    },
+        console.debug('[Tag Filter] Filtered moves for tag and playlist:', filteredMoves);
 
-    // Filter moves based on the current tag
-    applyFilter(moves, playlist) {
-        console.debug(`[Tag Filter] applyFilter called for tag: ${this.currentTag}`);
-
-        const filteredMoves = this.currentTag === DEFAULT_TAG
-            ? moves.filter(move => move.playlist_tags[playlist]?.length > 0)
-            : moves.filter(move => move.playlist_tags[playlist]?.includes(this.currentTag));
-
-        console.debug(`[Tag Filter] Filtered ${filteredMoves.length} moves based on tag "${this.currentTag}".`);
         updateMoveTable(filteredMoves);
-        trigger('tagFilterChange', filteredMoves);
+        trigger('tagFilterChange', { playlist, tag });
     },
-
-    reset(moves, playlist) {
-        console.debug('[Tag Filter] reset called.');
-        this.setTag(DEFAULT_TAG, moves, playlist);
-    },  
 };
 
-export function updateTagFilter(playlist, moves) {
+export function updateTagFilter(playlist) {
     console.debug('[Tag Filter] updateTagFilter called.');
     console.debug('[Tag Filter] Playlist:', playlist);
-    console.debug('[Tag Filter] Moves:', moves);
 
     // Gather unique tags for the playlist
     const tags = [DEFAULT_TAG]; // Add the default filter option
-    moves.forEach(move => {
+    allMoves.forEach(move => {
         if (move.playlist_tags && move.playlist_tags[playlist]) {
             tags.push(...move.playlist_tags[playlist]);
         }
@@ -73,10 +65,10 @@ export function updateTagFilter(playlist, moves) {
         item.addEventListener('click', event => {
             const selectedTag = event.target.dataset.tag;
             console.info(`[Tag Filter] Selected tag: ${selectedTag}`);
-            tagFilter.setTag(selectedTag, moves, playlist);
+            tagFilter.setTag(selectedTag, playlist);
         });
     });
 
     console.info('[Tag Filter] Dropdown updated successfully.');
-}
 
+}

@@ -1,6 +1,7 @@
 // player.js
 "use strict";
 import { on, trigger } from './common.js';
+import { allMoves } from './index.js';
 
 console.debug('[Global] player.js loaded');
 
@@ -18,6 +19,11 @@ export function setPlayerSpeed(speed) {
     player.speed = closestSpeed;
 
     const sliderIndex = speeds.indexOf(closestSpeed);
+    if (sliderIndex < 0 || sliderIndex >= speeds.length) {
+        console.error('[Player] Invalid slider index:', sliderIndex);
+        return;
+    }
+
     document.getElementById('speed-slider').value = sliderIndex;
     document.getElementById('speed-display').innerText = `${closestSpeed}x`;
 
@@ -37,88 +43,66 @@ export function initializePlayer(videoElement) {
     player.on('ended', () => trigger('playbackEnded'));
 
     console.debug('[Player] Initialized.');
+
+    console.debug('[Player] Speed Slider Config:', {
+        min: document.getElementById('speed-slider').min,
+        max: document.getElementById('speed-slider').max,
+        step: document.getElementById('speed-slider').step,
+        value: document.getElementById('speed-slider').value,
+    });    
 }
 
 // Setup Speed Control
 export function setupSpeedControl() {
     document.getElementById('speed-slider').addEventListener('input', (event) => {
         const speedValue = parseInt(event.target.value, 10);
+        console.debug(`[Player] Slider value changed: ${speedValue}`);
         setPlayerSpeed(speedValue);
+
         isSpeedOverride = true;
-        console.info('[Speed Control] Speed override activated.');
+        console.info('[Player] Speed override activated.');
     });
 }
 
 // Initialize
-export function initializePlayerUI(moves) {
+export function initializePlayerUI() {
     on('playbackStarted', () => console.info('[App Event] Playback started.'));
     on('playbackEnded', () => console.info('[App Event] Playback ended.'));
 
-    on('moveAction', ({ moveIndex, action, moves }) => {
-        // Debug: Log the parameters received
-        console.debug('[moveAction] Event parameters:', { moveIndex, action, moves });
-    
-        // Check if moves is a valid array
-        if (!Array.isArray(moves)) {
-            console.error('[Player] Moves array is undefined or not an array:', moves);
-            return;
-        }
-    
-        // Debug: Log the length of the moves array
-        console.debug('[Player] Moves array length:', moves.length);
-    
-        // Check if moveIndex is valid
-        if (moveIndex < 0 || moveIndex >= moves.length) {
-            console.error(`[Player] Invalid moveIndex: ${moveIndex}. Out of bounds for moves array.`);
-            return;
-        }
+    on('moveAction', ({ moveIndex, action }) => {
+        console.debug('[Player] moveAction event parameters:', { moveIndex, action });
     
         // Retrieve the move
-        const move = moves[moveIndex];
-    
-        // Debug: Log the retrieved move
-        console.debug('[Player] Retrieved move:', move);
-    
-        // Check if move is valid
+        const move = allMoves[moveIndex];
         if (!move) {
             console.error(`[Player] No move found for index ${moveIndex}.`);
             return;
         }
+        console.debug('[Player] Retrieved move for moveIndex:', { moveIndex, move });
+    
+        // Log move details
+        console.debug('[Player] Retrieved move:', move);
     
         // Destructure move properties
         const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
     
-        // Debug: Log destructured properties
-        console.debug('[Player] Destructured move properties:', {
-            video_filename, loop_start, loop_end, loop_speed, guide_start, notes
-        });
-    
-        // Determine playback speed
+        // Calculate playback speed
         const sliderValue = document.getElementById('speed-slider')?.value;
         const speed = isSpeedOverride && sliderValue !== undefined
             ? speeds[parseInt(sliderValue, 10)]
             : loop_speed;
     
-        // Debug: Log the calculated speed
-        console.debug('[Player] Calculated speed:', speed);
-    
-        // Determine if looping
-        const isLooping = action === 'loop';
-    
-        // Debug: Log the playback mode
-        console.debug('[Player] Playback mode:', isLooping ? 'Looping' : 'Guide');
-    
-        // Debug: Log video playback details
-        console.info(`[Player] Playing move: ${action} with speed: ${speed}, start: ${isLooping ? loop_start : guide_start}, end: ${isLooping ? loop_end : null}.`);
+        // Log playback details
+        console.info(`[Player] Playing move: ${action} with speed: ${speed}, start: ${action === 'loop' ? loop_start : guide_start}, end: ${action === 'loop' ? loop_end : null}.`);
     
         // Play the video
         playVideo({
             videoFilename: video_filename,
-            start: isLooping ? loop_start : guide_start,
-            end: isLooping ? loop_end : null,
+            start: action === 'loop' ? loop_start : guide_start,
+            end: action === 'loop' ? loop_end : null,
             speed,
             notes,
-            isLooping,
+            isLooping: action === 'loop',
         });
     });
 
@@ -217,7 +201,7 @@ function playVideo({
     isLooping = false
 }) {
     if (!videoFilename) {
-        console.warn('[Play Video] No video filename provided. Displaying placeholder.');
+        console.warn('[Player: Play Video] No video filename provided. Displaying placeholder.');
         document.getElementById('player').style.display = 'none';
         document.getElementById('player-placeholder').style.display = 'block';
         displayNotes("No video available for this move.");
@@ -225,8 +209,8 @@ function playVideo({
     }
 
     const videoSrc = `/static/videos/${videoFilename}`;
-    console.debug(`[Play Video] Video source: ${videoSrc}`);
-    console.info(`[Play Video] Playing video "${videoFilename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
+    console.debug(`[Player: Play Video] Video source: ${videoSrc}`);
+    console.info(`[Player: Play Video] Playing video "${videoFilename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
 
     // Check for slider override
     const sliderElement = document.getElementById('speed-slider');
@@ -237,30 +221,30 @@ function playVideo({
         const currentSrc = player.source?.sources?.[0]?.src;
 
         if (currentSrc === videoSrc) {
-            console.debug('[Play Video] Source unchanged, skipping reload');
+            console.debug('[Player: Play Video] Source unchanged, skipping reload');
             executePlayback(start, end, finalSpeed, notes, isLooping);
             return;
         }
 
-        console.debug('[Play Video] Updating player source');
+        console.debug('[Player: Play Video] Updating player source');
         player.source = {
             type: 'video',
             sources: [{ src: videoSrc, type: 'video/mp4' }]
         };
 
         player.once('loadedmetadata', () => {
-            console.debug(`[Play Video] Metadata loaded for "${videoFilename}". Preparing playback.`);
+            console.debug(`[Player: Play Video] Metadata loaded for "${videoFilename}". Preparing playback.`);
             executePlayback(start, end, finalSpeed, notes, isLooping);
         });
 
         player.once('error', (error) => {
-            console.error('[Play Video] Error loading video:', error);
+            console.error('[Player: Play Video] Error loading video:', error);
             document.getElementById('player').style.display = 'none';
             document.getElementById('player-placeholder').style.display = 'block';
             displayNotes("Failed to load video.");
         });
     } catch (error) {
-        console.error('[Play Video] Unexpected error:', error);
+        console.error('[Player: Play Video] Unexpected error:', error);
         document.getElementById('player').style.display = 'none';
         document.getElementById('player-placeholder').style.display = 'block';
         displayNotes("Unexpected error occurred while loading video.");
