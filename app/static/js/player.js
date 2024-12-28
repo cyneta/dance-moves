@@ -30,6 +30,18 @@ export function setPlayerSpeed(speed) {
     console.debug(`[Player] Speed set to ${closestSpeed}.`);
 }
 
+// Centralized Speed Determination
+function determinePlaybackSpeed(action, loopSpeed) {
+    if (action === 'guide') return 1.0; // Fixed speed for guide actions
+
+    if (isSpeedOverride) {
+        const sliderValue = parseInt(document.getElementById('speed-slider')?.value, 10);
+        return speeds[sliderValue] || 1.0;
+    }
+
+    return speeds.reduce((prev, curr) => Math.abs(curr - loopSpeed) < Math.abs(prev - loopSpeed) ? curr : prev);
+}
+
 // Initialize Player
 export function initializePlayer(videoElement) {
     if (player) player.destroy();
@@ -43,15 +55,9 @@ export function initializePlayer(videoElement) {
     player.on('ended', () => trigger('playbackEnded'));
 
     console.debug('[Player] Initialized.');
-
-    console.debug('[Player] Speed Slider Config:', {
-        min: document.getElementById('speed-slider').min,
-        max: document.getElementById('speed-slider').max,
-        step: document.getElementById('speed-slider').step,
-        value: document.getElementById('speed-slider').value,
-    });    
 }
 
+// Update Speed From Slider
 function updateSpeedFromSlider(sliderIndex) {
     if (sliderIndex < 0 || sliderIndex >= speeds.length) {
         console.error('[Player] Invalid slider index:', sliderIndex);
@@ -61,8 +67,7 @@ function updateSpeedFromSlider(sliderIndex) {
     const speed = speeds[sliderIndex];
     player.speed = speed;
 
-    const speedDisplay = document.getElementById('speed-display');
-    speedDisplay.innerText = `${speed}x`;
+    document.getElementById('speed-display').innerText = `${speed}x`;
 
     console.debug(`[Player] Speed updated to ${speed} (Slider index: ${sliderIndex}).`);
 }
@@ -70,22 +75,35 @@ function updateSpeedFromSlider(sliderIndex) {
 // Setup Speed Control
 export function setupSpeedControl() {
     const slider = document.getElementById('speed-slider');
-
     slider.addEventListener('input', (event) => {
         const sliderIndex = parseInt(event.target.value, 10);
-        const speed = speeds[sliderIndex];
-
         console.debug(`[Player] Slider value changed: ${sliderIndex}`);
         updateSpeedFromSlider(sliderIndex);
 
         isSpeedOverride = true; // Activate speed override
         console.info('[Player] Speed override activated.');
-    });    
-}    
+    });
+}
 
+// Initialize Speed Slider
+function initializeSpeedSlider(slider) {
+    const defaultSpeed = 1.0;
+    const defaultIndex = speeds.indexOf(defaultSpeed);
+
+    if (defaultIndex !== -1) {
+        slider.value = defaultIndex;
+        updateSpeedFromSlider(defaultIndex);
+        console.info(`[Player] Speed slider initialized to ${defaultSpeed}x.`);
+    } else {
+        console.warn('[Player] Default speed (1.0) not found in speeds array.');
+    }
+}
+
+// Setup Keyboard Controls
 export function setupKeyboardControls() {
     document.addEventListener('keydown', (event) => {
         if (!player) return;
+
         const key = event.key;
         const shiftPressed = event.shiftKey;
         const seekAmount = shiftPressed ? 5 : 1;
@@ -100,48 +118,42 @@ export function setupKeyboardControls() {
                 break;
             case 'ArrowLeft':
                 player.currentTime = Math.max(0, player.currentTime - seekAmount);
-                console.debug(`[Seek] Rewound by ${seekAmount} seconds. Current time: ${player.currentTime}`);
                 break;
             case 'ArrowRight':
                 player.currentTime = Math.min(player.duration, player.currentTime + seekAmount);
-                console.debug(`[Seek] Fast-forwarded by ${seekAmount} seconds. Current time: ${player.currentTime}`);
                 break;
             case 'ArrowUp':
                 player.volume = Math.min(1, player.volume + 0.1);
-                console.debug(`[Volume] Increased to: ${player.volume}`);
                 break;
             case 'ArrowDown':
                 player.volume = Math.max(0, player.volume - 0.1);
-                console.debug(`[Volume] Decreased to: ${player.volume}`);
                 break;
             case 'Home':
                 player.currentTime = 0;
-                console.debug('[Seek] Jumped to the beginning.');
                 break;
             case 'End':
                 player.currentTime = player.duration;
-                console.debug('[Seek] Jumped to the end.');
                 break;
             case 'm':
                 player.muted = !player.muted;
-                console.debug(`[Volume] Muted: ${player.muted}`);
                 break;
             case 'f':
                 player.fullscreen.toggle();
-                console.debug('[Player] Full-screen toggled.');
                 break;
         }
     });
 }
 
-// Initialize
+// Initialize Player UI
 export function initializePlayerUI() {
+    console.debug('[Player UI] Initializing...');
+
+    // Setup playback events
     on('playbackStarted', () => console.info('[App Event] Playback started.'));
     on('playbackEnded', () => console.info('[App Event] Playback ended.'));
 
+    // Handle moveAction events
     on('moveAction', ({ moveIndex, action }) => {
-        console.debug('[Player] moveAction event parameters:', { moveIndex, action });
-
         const move = allMoves[moveIndex];
         if (!move) {
             console.error(`[Player] No move found for index ${moveIndex}.`);
@@ -150,21 +162,14 @@ export function initializePlayerUI() {
 
         const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
 
-        // Determine the appropriate speed
-        const speed = action === 'guide'
-            ? 1.0 // Fixed speed for guide
-            : isSpeedOverride
-                ? speeds[parseInt(document.getElementById('speed-slider').value, 10)]
-                : speeds.reduce((prev, curr) => Math.abs(curr - loop_speed) < Math.abs(prev - loop_speed) ? curr : prev);
+        const speed = determinePlaybackSpeed(action, loop_speed);
 
+        const slider = document.getElementById('speed-slider');
         const sliderIndex = speeds.indexOf(speed);
 
-        // Update the slider and propagate the speed change
-        const slider = document.getElementById('speed-slider');
         slider.value = sliderIndex;
         slider.dispatchEvent(new Event('input'));
 
-        // Play the video
         playVideo({
             videoFilename: video_filename,
             start: action === 'loop' ? loop_start : guide_start,
@@ -177,27 +182,19 @@ export function initializePlayerUI() {
 
     const videoElement = document.getElementById('player');
     if (!videoElement) {
-        console.error('[Player] No video element found.');
+        console.error('[Player UI] No video element found.');
         return;
     }
 
     initializePlayer(videoElement);
 
-    // Initialize the speed slider to 1.0
     const slider = document.getElementById('speed-slider');
-    const defaultSpeed = 1.0;
-    const defaultIndex = speeds.indexOf(defaultSpeed);
+    setupSpeedControl(slider);
+    initializeSpeedSlider(slider);
 
-    if (defaultIndex !== -1) {
-        slider.value = defaultIndex;
-        updateSpeedFromSlider(defaultIndex);
-        console.info(`[Player] Speed slider initialized to ${defaultSpeed}x.`);
-    } else {
-        console.warn('[Player] Default speed (1.0) not found in speeds array.');
-    }
+    setupKeyboardControls();
 
-    setupSpeedControl();
-    setupKeyboardControls(); // Add keyboard controls for additional functionality
+    console.info('[Player UI] Initialization complete.');
 }
 
 function displayNotes(notes) {
