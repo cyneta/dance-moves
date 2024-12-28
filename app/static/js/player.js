@@ -6,8 +6,7 @@ import { allMoves } from './index.js';
 console.debug('[Global] player.js loaded');
 
 const speeds = [
-    0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.57, 0.63, 0.7, 0.8,
-    0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.8, 2.0
+    0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.57, 0.63, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.8, 2.0
 ];
 
 let player;
@@ -144,55 +143,67 @@ export function setupKeyboardControls() {
     });
 }
 
+// Splash Screen Functions
+function showInstructions(text) {
+    const overlay = document.querySelector('.instructions-overlay');
+    if (!overlay) {
+        console.error('[Splash Screen] No .instructions-overlay element found.');
+        return;
+    }
+
+    const instructionsText = `
+        <ol>
+            ${text.map(item => `<li>${item}</li>`).join('')}
+        </ol>
+    `;
+    overlay.innerHTML = `<div class="instructions-text">${instructionsText}</div>`;
+    overlay.style.display = 'flex';
+    console.debug('[Splash Screen] Instructions displayed.');
+}
+
+function hideInstructions() {
+    const overlay = document.querySelector('.instructions-overlay');
+    if (!overlay) {
+        console.error('[Splash Screen] No .instructions-overlay element found.');
+        return;
+    }
+
+    overlay.style.display = 'none';
+    console.debug('[Splash Screen] Instructions hidden.');
+}
+
 // Initialize Player UI
 export function initializePlayerUI() {
     console.debug('[Player UI] Initializing...');
 
-    // Setup playback events
+    // Setup player events
     on('playbackStarted', () => console.info('[App Event] Playback started.'));
     on('playbackEnded', () => console.info('[App Event] Playback ended.'));
 
-    // Handle moveAction events
-    on('moveAction', ({ moveIndex, action }) => {
-        const move = allMoves[moveIndex];
-        if (!move) {
-            console.error(`[Player] No move found for index ${moveIndex}.`);
-            return;
-        }
+    // Player instructions
+    const instructions = [
+        "Pick a dance style to practice.",
+        "Select a playlist on the left.",
+        "Choose a move from the list.",
+        "Press 'Loop' or 'Guide' for targeted practice.",
+        "Use the speed control to adjust playback."
+    ];
+    showInstructions(instructions);
 
-        const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
-
-        const speed = determinePlaybackSpeed(action, loop_speed);
-
-        const slider = document.getElementById('speed-slider');
-        const sliderIndex = speeds.indexOf(speed);
-
-        slider.value = sliderIndex;
-        slider.dispatchEvent(new Event('input'));
-
-        playVideo({
-            videoFilename: video_filename,
-            start: action === 'loop' ? loop_start : guide_start,
-            end: action === 'loop' ? loop_end : null,
-            speed,
-            notes,
-            isLooping: action === 'loop',
-        });
-    });
-
-    const videoElement = document.getElementById('player');
-    if (!videoElement) {
-        console.error('[Player UI] No video element found.');
-        return;
+    // Hide instructions on video playback
+    if (player) {
+        player.on('play', hideInstructions);
+    } else {
+        console.warn('[Player UI] Player not initialized. Cannot attach hideInstructions.');
     }
 
-    initializePlayer(videoElement);
-
-    const slider = document.getElementById('speed-slider');
-    setupSpeedControl(slider);
-    initializeSpeedSlider(slider);
-
-    setupKeyboardControls();
+    // Initialize player
+    const videoElement = document.getElementById('player');
+    if (videoElement) {
+        initializePlayer(videoElement);
+    } else {
+        console.error('[Player UI] No video element found for player initialization.');
+    }
 
     console.info('[Player UI] Initialization complete.');
 }
