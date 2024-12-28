@@ -83,6 +83,57 @@ export function setupSpeedControl() {
     });    
 }    
 
+export function setupKeyboardControls() {
+    document.addEventListener('keydown', (event) => {
+        if (!player) return;
+        const key = event.key;
+        const shiftPressed = event.shiftKey;
+        const seekAmount = shiftPressed ? 5 : 1;
+
+        if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'm', 'f'].includes(key)) {
+            event.preventDefault();
+        }
+
+        switch (key) {
+            case ' ':
+                player.togglePlay();
+                break;
+            case 'ArrowLeft':
+                player.currentTime = Math.max(0, player.currentTime - seekAmount);
+                console.debug(`[Seek] Rewound by ${seekAmount} seconds. Current time: ${player.currentTime}`);
+                break;
+            case 'ArrowRight':
+                player.currentTime = Math.min(player.duration, player.currentTime + seekAmount);
+                console.debug(`[Seek] Fast-forwarded by ${seekAmount} seconds. Current time: ${player.currentTime}`);
+                break;
+            case 'ArrowUp':
+                player.volume = Math.min(1, player.volume + 0.1);
+                console.debug(`[Volume] Increased to: ${player.volume}`);
+                break;
+            case 'ArrowDown':
+                player.volume = Math.max(0, player.volume - 0.1);
+                console.debug(`[Volume] Decreased to: ${player.volume}`);
+                break;
+            case 'Home':
+                player.currentTime = 0;
+                console.debug('[Seek] Jumped to the beginning.');
+                break;
+            case 'End':
+                player.currentTime = player.duration;
+                console.debug('[Seek] Jumped to the end.');
+                break;
+            case 'm':
+                player.muted = !player.muted;
+                console.debug(`[Volume] Muted: ${player.muted}`);
+                break;
+            case 'f':
+                player.fullscreen.toggle();
+                console.debug('[Player] Full-screen toggled.');
+                break;
+        }
+    });
+}
+
 // Initialize
 export function initializePlayerUI() {
     on('playbackStarted', () => console.info('[App Event] Playback started.'));
@@ -146,6 +197,7 @@ export function initializePlayerUI() {
     }
 
     setupSpeedControl();
+    setupKeyboardControls(); // Add keyboard controls for additional functionality
 }
 
 function displayNotes(notes) {
