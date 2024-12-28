@@ -52,17 +52,36 @@ export function initializePlayer(videoElement) {
     });    
 }
 
+function updateSpeedFromSlider(sliderIndex) {
+    if (sliderIndex < 0 || sliderIndex >= speeds.length) {
+        console.error('[Player] Invalid slider index:', sliderIndex);
+        return;
+    }
+
+    const speed = speeds[sliderIndex];
+    player.speed = speed;
+
+    const speedDisplay = document.getElementById('speed-display');
+    speedDisplay.innerText = `${speed}x`;
+
+    console.debug(`[Player] Speed updated to ${speed} (Slider index: ${sliderIndex}).`);
+}
+
 // Setup Speed Control
 export function setupSpeedControl() {
-    document.getElementById('speed-slider').addEventListener('input', (event) => {
-        const speedValue = parseInt(event.target.value, 10);
-        console.debug(`[Player] Slider value changed: ${speedValue}`);
-        setPlayerSpeed(speedValue);
+    const slider = document.getElementById('speed-slider');
 
-        isSpeedOverride = true;
+    slider.addEventListener('input', (event) => {
+        const sliderIndex = parseInt(event.target.value, 10);
+        const speed = speeds[sliderIndex];
+
+        console.debug(`[Player] Slider value changed: ${sliderIndex}`);
+        updateSpeedFromSlider(sliderIndex);
+
+        isSpeedOverride = true; // Activate speed override
         console.info('[Player] Speed override activated.');
-    });
-}
+    });    
+}    
 
 // Initialize
 export function initializePlayerUI() {
@@ -71,30 +90,29 @@ export function initializePlayerUI() {
 
     on('moveAction', ({ moveIndex, action }) => {
         console.debug('[Player] moveAction event parameters:', { moveIndex, action });
-    
-        // Retrieve the move
+
         const move = allMoves[moveIndex];
         if (!move) {
             console.error(`[Player] No move found for index ${moveIndex}.`);
             return;
         }
-        console.debug('[Player] Retrieved move for moveIndex:', { moveIndex, move });
-    
-        // Log move details
-        console.debug('[Player] Retrieved move:', move);
-    
-        // Destructure move properties
+
         const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
-    
-        // Calculate playback speed
-        const sliderValue = document.getElementById('speed-slider')?.value;
-        const speed = isSpeedOverride && sliderValue !== undefined
-            ? speeds[parseInt(sliderValue, 10)]
-            : loop_speed;
-    
-        // Log playback details
-        console.info(`[Player] Playing move: ${action} with speed: ${speed}, start: ${action === 'loop' ? loop_start : guide_start}, end: ${action === 'loop' ? loop_end : null}.`);
-    
+
+        // Determine the appropriate speed
+        const speed = action === 'guide'
+            ? 1.0 // Fixed speed for guide
+            : isSpeedOverride
+                ? speeds[parseInt(document.getElementById('speed-slider').value, 10)]
+                : speeds.reduce((prev, curr) => Math.abs(curr - loop_speed) < Math.abs(prev - loop_speed) ? curr : prev);
+
+        const sliderIndex = speeds.indexOf(speed);
+
+        // Update the slider and propagate the speed change
+        const slider = document.getElementById('speed-slider');
+        slider.value = sliderIndex;
+        slider.dispatchEvent(new Event('input'));
+
         // Play the video
         playVideo({
             videoFilename: video_filename,
@@ -111,7 +129,22 @@ export function initializePlayerUI() {
         console.error('[Player] No video element found.');
         return;
     }
+
     initializePlayer(videoElement);
+
+    // Initialize the speed slider to 1.0
+    const slider = document.getElementById('speed-slider');
+    const defaultSpeed = 1.0;
+    const defaultIndex = speeds.indexOf(defaultSpeed);
+
+    if (defaultIndex !== -1) {
+        slider.value = defaultIndex;
+        updateSpeedFromSlider(defaultIndex);
+        console.info(`[Player] Speed slider initialized to ${defaultSpeed}x.`);
+    } else {
+        console.warn('[Player] Default speed (1.0) not found in speeds array.');
+    }
+
     setupSpeedControl();
 }
 
