@@ -1,8 +1,7 @@
 "use strict";
 import { setupPlaylistButtons, initializePlaylists } from './playlist.js';
 import { setupMovesTable } from './movesTable.js';
-import { initializePlayerUI } from './player.js';
-import { setupKeyboardControls } from './player.js';
+import { initializePlayerUI, setupSpeedControl, setupKeyboardControls } from './player.js';
 
 // Export global variables
 export let allMoves = [];
@@ -36,6 +35,7 @@ async function initializeApp(danceType) {
     setupPlaylistButtons();
     initializePlaylists();
     setupMovesTable();
+    setupSpeedControl();
     initializePlayerUI();
     setupKeyboardControls();
 
