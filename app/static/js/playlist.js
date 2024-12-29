@@ -2,8 +2,8 @@
 "use strict";
 import { updateMoveTable } from './movesTable.js';
 import { updateTagFilter } from './tagFilter.js';
-import { allPlaylists } from './index.js';
-import { allMoves } from './index.js';
+import { resetAutoplaySwitch } from './player.js';
+import { allPlaylists, allMoves } from './index.js';
 
 console.debug('[Global] playlist.js loaded');
 
@@ -27,6 +27,7 @@ export function selectPlaylist(playlistName) {
 
     updateMoveTable(filteredMoves);
     updateTagFilter(playlistName);
+    resetAutoplaySwitch();    
 }
 
 // Setup Playlist Buttons

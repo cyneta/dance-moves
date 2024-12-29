@@ -2,6 +2,7 @@
 "use strict";
 import { allMoves } from './index.js';
 import { on } from './common.js';
+import { moveTableIndices } from './movesTable.js';
 
 console.info('[Global] player.js loaded');
 
@@ -11,6 +12,125 @@ const speeds = [
 
 let player;
 let isSpeedOverride = false;
+let isAutoplayEnabled = false;
+let currentVideoIndex = -1;         // Index of the currently playing video in allMoves
+
+// Setup the autoplay toggle button
+export function setupAutoplayToggle() {
+    const autoplayToggle = document.getElementById('autoplay-switch');
+    if (!autoplayToggle) {
+        console.error('[Autoplay] Toggle switch not found in the DOM.');
+        return;
+    }
+
+    autoplayToggle.addEventListener('change', (event) => {
+        const isEnabled = event.target.checked;
+        toggleAutoplay(isEnabled);
+    });
+
+    console.info('[Autoplay] Toggle switch setup complete.');
+}
+
+// Function to toggle autoplay
+export function toggleAutoplay(enabled) {
+    isAutoplayEnabled = enabled;
+    console.info(`[Autoplay] Autoplay is now ${enabled ? 'enabled' : 'disabled'}.`);
+}    
+
+export function resetAutoplaySwitch() {
+    const autoplaySwitch = document.getElementById('autoplay-switch');
+    if (autoplaySwitch) {
+        autoplaySwitch.checked = false; // Reset the switch to off
+        console.info('[Autoplay] Autoplay switch reset.');
+    } else {
+        console.error('[Autoplay] Autoplay switch element not found.');
+    }        
+}        
+
+export function resetCurrentVideoIndex() {
+    currentVideoIndex = -1;
+    console.info('[Player] currentVideoIndex has been reset.');
+}
+
+// Apply looping with autoplay support
+function applyLooping(start, end) {
+    console.debug(`[Looping] Applying loop: Start=${start}, End=${end}`);
+
+    if (!player || !player.media) {
+        console.error('[Looping] Player or media is not initialized.');
+        return;
+    }
+
+    const media = player.media;
+
+    // Remove any existing loop handler
+    if (media.loopHandler) {
+        media.removeEventListener('timeupdate', media.loopHandler);
+        console.debug('[Looping] Cleared existing loop listener.');
+    }
+
+    const loopHandler = () => {
+        if (player.currentTime >= end || player.ended) {
+            if (isAutoplayEnabled) {
+                console.info('[Autoplay] Moving to the next video.');
+                playNextVideo();
+            } else {
+                console.info(`[Looping] Loop triggered. Looping back to start (${start}).`);
+                player.currentTime = start;
+                player.play();
+            }
+        }
+    };
+
+    // Add the new loop handler
+    media.addEventListener('timeupdate', loopHandler);
+    media.loopHandler = loopHandler;
+    console.debug('[Looping] New loop listener added.');
+}
+
+// Play the next video in the sequence
+function playNextVideo() {
+    if (!moveTableIndices.length) {
+        console.error('[Autoplay] No moves available in the table.');
+        return;
+    }
+
+    // Find the current table index (position within moveTableIndices)
+    const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
+    if (currentTableIndex === -1) {
+        console.error('[Autoplay] Current video index is not in the table.');
+        return;
+    }
+
+    // Calculate the next table index (wrap around with modulo)
+    const nextTableIndex = (currentTableIndex + 1) % moveTableIndices.length;
+
+    // Get the next move index from moveTableIndices
+    const nextMoveIndex = moveTableIndices[nextTableIndex];
+    const nextMove = allMoves[nextMoveIndex];
+
+    if (!nextMove) {
+        console.error('[Autoplay] No next move found.');
+        return;
+    }
+
+    console.info(`[Autoplay] Playing next video: "${nextMove.move_name}"`);
+
+    // Update currentVideoIndex to the next move index
+    currentVideoIndex = nextMoveIndex;
+    console.debug(`[Autoplay] Updated currentVideoIndex to ${currentVideoIndex}.`);
+
+    // Play the next video
+    console.info(`[Autoplay] Playing next video: "${nextMove.move_name}"`);
+    playVideo({
+        video_filename: nextMove.video_filename,
+        start: nextMove.loop_start,
+        end: nextMove.loop_end,
+        speed: nextMove.loop_speed,
+        notes: nextMove.notes,
+        isLooping: true
+    });
+}
 
 // Set Player Speed
 export function setPlayerSpeed(speed) {
@@ -211,11 +331,11 @@ export function initializePlayerUI() {
     
         // Destructure the move data
         const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
-        
+    
         // Determine playback speed
         const speed = determinePlaybackSpeed(action, loop_speed);
         console.debug('[Player] Determined playback speed:', speed);
-        
+    
         // Update the speed slider
         const slider = document.getElementById('speed-slider');
         if (!slider) {
@@ -223,25 +343,30 @@ export function initializePlayerUI() {
             return;
         }
         const sliderIndex = speeds.indexOf(speed);
-        
+    
         if (sliderIndex === -1) {
             console.error('[Player] Speed not found in predefined speeds:', speed);
             console.debug('[Player] Predefined speeds:', speeds);
             return;
         }
-        
+    
         console.debug('[Player] Updating speed slider to index:', sliderIndex);
         slider.value = sliderIndex;
         slider.dispatchEvent(new Event('input'));
-        
+    
+        // Update the global currentVideoIndex to track the current video
+        currentVideoIndex = moveIndex;
+        console.debug(`[Player] Updated currentVideoIndex to ${currentVideoIndex}.`);
+    
+        // Play the selected video
         playVideo({
             video_filename,
             start: action === 'loop' ? loop_start : guide_start,
             end: action === 'loop' ? loop_end : null,
             speed,
             notes,
-            isLooping: action === 'loop',
-        });    
+            isLooping: action === 'loop'
+        });
     });
 }
 
@@ -289,38 +414,6 @@ function seekToStart(start) {
             reject(error);
         });
     });
-}
-
-function applyLooping(start, end) {
-    console.debug(`[Looping] Applying loop: Start=${start}, End=${end}`);
-
-    // Ensure the player and media are available
-    if (!player || !player.media) {
-        console.error('[Looping] Player or media is not initialized.');
-        return;
-    }
-
-    const media = player.media;
-
-    // Remove any existing loop handler
-    if (media.loopHandler) {
-        media.removeEventListener('timeupdate', media.loopHandler);
-        console.debug('[Looping] Cleared existing loop listener.');
-    }
-
-    const loopHandler = () => {
-        if (player.currentTime >= end || player.ended) {
-            console.info(`[Looping] Loop triggered. Looping back to start (${start}). Current time: ${player.currentTime}`);
-            player.currentTime = start;
-            player.play();
-        }
-    }
-
-    // Add the new loop handler
-    media.addEventListener('timeupdate', loopHandler);
-    media.loopHandler = loopHandler; // Store the handler for easy removal
-
-    console.debug('[Looping] New loop listener added.');
 }
 
 function playVideo({
