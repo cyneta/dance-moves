@@ -41,17 +41,6 @@ function determinePlaybackSpeed(action, loopSpeed) {
     return speeds.reduce((prev, curr) => Math.abs(curr - loopSpeed) < Math.abs(prev - loopSpeed) ? curr : prev);
 }
 
-// Initialize Player
-export function initializePlayer(videoElement) {
-    if (player) player.destroy();
-
-    player = new Plyr(videoElement, {
-        controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
-    });
-
-    console.info('[Player] Player initialized.');
-}
-
 // Update Speed From Slider
 function updateSpeedFromSlider(sliderIndex) {
     if (sliderIndex < 0 || sliderIndex >= speeds.length) {
@@ -185,14 +174,22 @@ export function initializePlayerUI() {
     ];
     showInstructions(instructions);
 
+    // Initialize Plyr player
     const videoElement = document.getElementById('player');
     if (!videoElement) {
         console.error('[Player UI] No video element found for initialization.');
         return;
     }
 
-    initializePlayer(videoElement);
+    if (player) player.destroy();
 
+    player = new Plyr(videoElement, {
+        controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
+    });
+
+    console.info('[Player] Player initialized.');
+
+    // Attach hideInstructions to player "play" event
     if (player) {
         player.on('play', hideInstructions);
         console.debug('[Player UI] Attached hideInstructions to player "play" event.');

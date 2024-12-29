@@ -40,9 +40,9 @@ async function initializeApp(danceType) {
     setupPlaylistButtons();     // Set up playlists
     initializePlaylists();      // Activates the first playlist
     setupMovesTable();          // Render the moves table based on the playlist and tag filter
-    initializeSpeedSlider();
-    initializePlayerUI();
-    setupKeyboardControls();
+    initializePlayerUI();       // Set up the player UI
+    initializeSpeedSlider();    // Set up the speed slider, which controls the player speed
+    setupKeyboardControls();    // Set up keyboard controls for the player
 
     console.info('[Index] Application initialized.');
 }
