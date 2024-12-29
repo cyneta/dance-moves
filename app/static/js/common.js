@@ -13,7 +13,7 @@ function findClosestSpeed(speed) {
     const closest = speeds.reduce((prev, curr) =>
         Math.abs(curr - speed) < Math.abs(prev - speed) ? curr : prev
     );
-    console.debug(`[Speed] Closest speed to ${speed} is ${closest}`);
+    console.debug(`[Speed] Closest match for ${speed}: ${closest}`);
     return closest;
 }
 
@@ -24,16 +24,19 @@ export { speeds, findClosestSpeed };
 const events = {};
 
 export function trigger(eventName, data) {
-    if (!events[eventName]) return;
+    if (!events[eventName]) {
+        console.warn(`[Event] No listeners for event "${eventName}".`);
+        return;
+    }
     events[eventName].forEach(callback => callback(data));
-    console.debug(`[Event] Triggered: ${eventName}`, data);
+    console.info(`[Event] Triggered: "${eventName}".`);
 }
 
+// Add a listener for an event
 export function on(eventName, callback) {
     if (!events[eventName]) {
         events[eventName] = [];
     }
     events[eventName].push(callback);
-    console.debug(`[Event] Listener added: ${eventName}`);
+    console.info(`[Event] Listener added for "${eventName}".`);
 }
-

@@ -1,8 +1,9 @@
+// movesTable.js
 "use strict";
 import { trigger } from './common.js';
 import { allMoves } from './index.js';
 
-console.debug('[Global] movesTable.js loaded');
+console.info('[Global] movesTable.js loaded');
 
 // Setup Moves Table
 export function setupMovesTable() {
@@ -14,14 +15,12 @@ export function setupMovesTable() {
             const currentRow = clickedButton.closest('tr');
             const moveIndex = parseInt(currentRow?.dataset.index, 10); // Extract data-index
 
-            console.debug('[Move Table] Extracted data-index:', moveIndex);
-
             if (!Number.isInteger(moveIndex)) {
-                console.error('[Move Table] Invalid or missing move index in the row.');
+                console.error('[Moves Table] Invalid or missing move index in the row.');
                 return;
             }
 
-            console.info(`[Move Table] Move action triggered: ${action} for move index ${moveIndex}.`);
+            console.info(`[Moves Table] Action "${action}" triggered for move index ${moveIndex}.`);
             trigger('moveAction', { moveIndex, action });
         }
     });
@@ -29,8 +28,6 @@ export function setupMovesTable() {
 
 // Update Moves Table
 export function updateMoveTable(filteredMoves = []) {
-    console.debug('[Moves Table] Rendering with filtered moves:', filteredMoves);
-
     const moveTable = document.querySelector('#moves-table-container tbody');
     moveTable.innerHTML = '';
 
@@ -54,5 +51,5 @@ export function updateMoveTable(filteredMoves = []) {
         moveTable.appendChild(row);
     });
 
-    console.debug('[Move Table] Rendered with filtered moves:', filteredMoves);
+    console.info(`[Moves Table] Rendered ${filteredMoves.length} moves.`);
 }

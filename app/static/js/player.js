@@ -3,14 +3,14 @@
 import { allMoves } from './index.js';
 import { on } from './common.js';
 
-console.debug('[Global] player.js loaded');
+console.info('[Global] player.js loaded');
 
 const speeds = [
     0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.57, 0.63, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.8, 2.0
 ];
 
 let player;
-let isSpeedOverride = false; // Tracks if the speed slider is overriding move speeds
+let isSpeedOverride = false;
 
 // Set Player Speed
 export function setPlayerSpeed(speed) {
@@ -26,12 +26,12 @@ export function setPlayerSpeed(speed) {
     document.getElementById('speed-slider').value = sliderIndex;
     document.getElementById('speed-display').innerText = `${closestSpeed}x`;
 
-    console.debug(`[Player] Speed set to ${closestSpeed}.`);
+    console.info(`[Player] Speed set to ${closestSpeed}.`);
 }
 
-// Centralized Speed Determination
+// Determine Playback Speed
 function determinePlaybackSpeed(action, loopSpeed) {
-    if (action === 'guide') return 1.0; // Fixed speed for guide actions
+    if (action === 'guide') return 1.0;
 
     if (isSpeedOverride) {
         const sliderValue = parseInt(document.getElementById('speed-slider')?.value, 10);
@@ -49,7 +49,7 @@ export function initializePlayer(videoElement) {
         controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
     });
 
-    console.debug('[Player] Initialized.');
+    console.info('[Player] Player initialized.');
 }
 
 // Update Speed From Slider
@@ -72,11 +72,9 @@ export function setupSpeedControl() {
     const slider = document.getElementById('speed-slider');
     slider.addEventListener('input', (event) => {
         const sliderIndex = parseInt(event.target.value, 10);
-        console.debug(`[Player] Slider value changed: ${sliderIndex}`);
         updateSpeedFromSlider(sliderIndex);
-
-        isSpeedOverride = true; // Activate speed override
-        console.info('[Player] Speed override activated.');
+        isSpeedOverride = true;
+        console.info('[Player] Speed override activated via slider.');
     });
 }
 
@@ -143,7 +141,7 @@ export function setupKeyboardControls() {
 function showInstructions(text) {
     const overlay = document.querySelector('.instructions-overlay');
     if (!overlay) {
-        console.error('[Splash Screen] No .instructions-overlay element found.');
+        console.error('[Player UI] Missing instructions overlay.');
         return;
     }
 
@@ -154,25 +152,24 @@ function showInstructions(text) {
     `;
     overlay.innerHTML = `<div class="instructions-text">${instructionsText}</div>`;
     overlay.style.display = 'flex';
-    console.debug('[Splash Screen] Instructions displayed.');
+    console.info('[Player UI] Splash screen displayed.');
 }
 
 function hideInstructions() {
     const overlay = document.querySelector('.instructions-overlay');
     if (!overlay) {
-        console.error('[Splash Screen] No .instructions-overlay element found.');
+        console.error('[Player UI] Missing instructions overlay.');
         return;
     }
 
     overlay.style.display = 'none';
-    console.debug('[Splash Screen] Instructions hidden.');
+    console.debug('[Player UI] Splash screen hidden.');
 }
 
 // Initialize Player UI
 export function initializePlayerUI() {
-    console.debug('[Player UI] Initializing...');
+    console.info('[Player UI] Initializing...');
 
-    // Player instructions
     const instructions = [
         "Pick a dance style to practice.",
         "Select a playlist on the left.",
@@ -182,21 +179,17 @@ export function initializePlayerUI() {
     ];
     showInstructions(instructions);
 
-    // Initialize player
     const videoElement = document.getElementById('player');
     if (!videoElement) {
-        console.error('[Player UI] No video element found for player initialization.');
+        console.error('[Player UI] No video element found for initialization.');
         return;
     }
 
     initializePlayer(videoElement);
 
-    // Attach hideInstructions to player's play event after initialization
     if (player) {
         player.on('play', hideInstructions);
         console.debug('[Player UI] Attached hideInstructions to player "play" event.');
-    } else {
-        console.warn('[Player UI] Player not initialized. Cannot attach hideInstructions.');
     }
 
     // Handle moveAction events
@@ -215,14 +208,11 @@ export function initializePlayerUI() {
     
         // Destructure the move data
         const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
-        console.debug('[Player] Extracted move properties:', {
-            video_filename, loop_start, loop_end, loop_speed, guide_start, notes
-        });
-    
+        
         // Determine playback speed
         const speed = determinePlaybackSpeed(action, loop_speed);
         console.debug('[Player] Determined playback speed:', speed);
-    
+        
         // Update the speed slider
         const slider = document.getElementById('speed-slider');
         if (!slider) {
@@ -230,38 +220,29 @@ export function initializePlayerUI() {
             return;
         }
         const sliderIndex = speeds.indexOf(speed);
-    
+        
         if (sliderIndex === -1) {
             console.error('[Player] Speed not found in predefined speeds:', speed);
             console.debug('[Player] Predefined speeds:', speeds);
             return;
         }
-    
+        
         console.debug('[Player] Updating speed slider to index:', sliderIndex);
         slider.value = sliderIndex;
         slider.dispatchEvent(new Event('input'));
-    
+        
         // Play the video
-        console.debug('[Player] Preparing to play video with parameters:', {
-            videoFilename: video_filename,
-            start: action === 'loop' ? loop_start : guide_start,
-            end: action === 'loop' ? loop_end : null,
-            speed,
-            notes,
-            isLooping: action === 'loop'
-        });
-    
+        console.info(`[Player] Playing video "${video_filename}" | Start=${action === 'loop' ? loop_start : guide_start}, End=${action === 'loop' ? loop_end : 'N/A'}, Speed=${speed}.`);
+
         playVideo({
-            videoFilename: video_filename,
+            video_filename,
             start: action === 'loop' ? loop_start : guide_start,
             end: action === 'loop' ? loop_end : null,
             speed,
             notes,
             isLooping: action === 'loop',
-        });
+        });    
     });
-
-    console.info('[Player UI] Initialization complete.');
 }
 
 function displayNotes(notes) {
@@ -311,11 +292,9 @@ function seekToStart(start) {
 }
 
 function applyLooping(start, end) {
-    console.debug(`[Looping] Applying loop: Start=${start}, End=${end}`);
-
     // Ensure the player and media are available
     if (!player || !player.media) {
-        console.error('[Looping] Player or media is not initialized.');
+        console.warn('[Looping] Player or media not initialized.');
         return;
     }
 
@@ -342,14 +321,14 @@ function applyLooping(start, end) {
 }
 
 function playVideo({
-    videoFilename,
+    video_filename,
     start,
     end = null,
     speed = 1,
     notes = '',
     isLooping = false
 }) {
-    if (!videoFilename) {
+    if (!video_filename) {
         console.warn('[Player: Play Video] No video filename provided. Displaying placeholder.');
         document.getElementById('player').style.display = 'none';
         document.getElementById('player-placeholder').style.display = 'block';
@@ -357,9 +336,8 @@ function playVideo({
         return;
     }
 
-    const videoSrc = `/static/videos/${videoFilename}`;
-    console.debug(`[Player: Play Video] Video source: ${videoSrc}`);
-    console.info(`[Player: Play Video] Playing video "${videoFilename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
+    const videoSrc = `/static/videos/${video_filename}`;
+    console.info(`[Player: Play Video] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
 
     // Check for slider override
     const sliderElement = document.getElementById('speed-slider');
@@ -382,7 +360,7 @@ function playVideo({
         };
 
         player.once('loadedmetadata', () => {
-            console.debug(`[Player: Play Video] Metadata loaded for "${videoFilename}". Preparing playback.`);
+            console.debug(`[Player: Play Video] Metadata loaded for "${video_filename}". Preparing playback.`);
             executePlayback(start, end, finalSpeed, notes, isLooping);
         });
 

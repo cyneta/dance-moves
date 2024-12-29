@@ -1,3 +1,4 @@
+// playlist.js
 "use strict";
 import { updateMoveTable } from './movesTable.js';
 import { updateTagFilter } from './tagFilter.js';
@@ -22,7 +23,7 @@ export function selectPlaylist(playlistName) {
 
     const filteredMoves = allMoves.filter(move => move.playlist_tags?.[playlistName]?.length > 0);
 
-    console.debug(`[Playlist] Filtered moves for playlist "${playlistName}":`, filteredMoves);
+    console.info(`[Playlist] Playlist "${playlistName}" active with ${filteredMoves.length} moves.`);
 
     updateMoveTable(filteredMoves);
     updateTagFilter(playlistName);
@@ -30,8 +31,6 @@ export function selectPlaylist(playlistName) {
 
 // Setup Playlist Buttons
 export function setupPlaylistButtons() {
-    console.debug('[Playlist] setupPlaylistButtons called.');
-
     const playlistContainer = document.getElementById('playlist-container');
     if (!playlistContainer) {
         console.error('[Playlist] Playlist container not found.');
@@ -39,7 +38,6 @@ export function setupPlaylistButtons() {
     }
 
     if (!Array.isArray(allPlaylists) || allPlaylists.length === 0) {
-        console.error('[Playlist] Invalid or empty playlists data:', allPlaylists);
         playlistContainer.innerHTML = `<p class="text-danger">No playlists available.</p>`;
         return;
     }
@@ -51,7 +49,6 @@ export function setupPlaylistButtons() {
         button.textContent = playlist;
 
         button.addEventListener('click', () => {
-            console.debug(`[Playlist] Button clicked for playlist: "${playlist}"`);
             selectPlaylist(playlist);
             updatePlaylistButtons(playlist);
         });
@@ -59,7 +56,7 @@ export function setupPlaylistButtons() {
         playlistContainer.appendChild(button);
     });
 
-    console.info(`[Playlist] ${allPlaylists.length} playlist buttons initialized.`);
+    console.info(`[Playlist] Initialized with ${allPlaylists.length} playlists.`);
 }
 
 export function initializePlaylists() {
