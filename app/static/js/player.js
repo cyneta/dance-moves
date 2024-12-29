@@ -234,9 +234,6 @@ export function initializePlayerUI() {
         slider.value = sliderIndex;
         slider.dispatchEvent(new Event('input'));
         
-        // Play the video
-        console.info(`[Player] Playing video "${video_filename}" | Start=${action === 'loop' ? loop_start : guide_start}, End=${action === 'loop' ? loop_end : 'N/A'}, Speed=${speed}.`);
-
         playVideo({
             video_filename,
             start: action === 'loop' ? loop_start : guide_start,
@@ -295,38 +292,41 @@ function seekToStart(start) {
 }
 
 function applyLooping(start, end) {
+    console.debug(`[Looping] Applying loop: Start=${start}, End=${end}`);
+
     // Ensure the player and media are available
     if (!player || !player.media) {
-        console.warn('[Looping] Player or media not initialized.');
+        console.error('[Looping] Player or media is not initialized.');
         return;
     }
 
-    const videoElement = player.media;
+    const media = player.media;
 
     // Remove any existing loop handler
-    if (videoElement.loopHandler) {
-        videoElement.removeEventListener('timeupdate', videoElement.loopHandler);
-        console.debug('[Looping] Cleared existing timeupdate listener.');
+    if (media.loopHandler) {
+        media.removeEventListener('timeupdate', media.loopHandler);
+        console.debug('[Looping] Cleared existing loop listener.');
     }
 
-    // Define the loop handler
-    const loopHandler = (event) => {
-        if (event.target.currentTime >= end) {
-            console.debug(`[Looping] Loop complete. Restarting at: ${start}`);
-            event.target.currentTime = start;
+    const loopHandler = () => {
+        if (player.currentTime >= end || player.ended) {
+            console.info(`[Looping] Loop triggered. Looping back to start (${start}). Current time: ${player.currentTime}`);
+            player.currentTime = start;
+            // player.play();
         }
-    };
+    }
 
     // Add the new loop handler
-    videoElement.addEventListener('timeupdate', loopHandler);
-    videoElement.loopHandler = loopHandler; // Store the handler for easy removal
-    console.debug('[Looping] New timeupdate listener added.');
+    media.addEventListener('timeupdate', loopHandler);
+    media.loopHandler = loopHandler; // Store the handler for easy removal
+
+    console.debug('[Looping] New loop listener added.');
 }
 
 function playVideo({
     video_filename,
     start,
-    end = null,
+    end,
     speed = 1,
     notes = '',
     isLooping = false
@@ -339,20 +339,24 @@ function playVideo({
         return;
     }
 
-    const videoSrc = `/static/videos/${video_filename}`;
-    console.info(`[Player: Play Video] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
-
-    // Check for slider override
     const sliderElement = document.getElementById('speed-slider');
     const sliderValue = sliderElement ? parseInt(sliderElement.value, 10) : null;
-    const finalSpeed = isSpeedOverride && sliderValue !== null ? speeds[sliderValue] : speed;
+    const calculatedSpeed = isSpeedOverride && sliderValue !== null ? speeds[sliderValue] : speed;
+
+    const videoSrc = `/static/videos/${video_filename}`;
+    console.debug(`[Player: Play Video] Resolving playback for "${video_filename}".`);
+
+    const playWithResolvedMetadata = () => {
+        console.info(`[Player: Play Video] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${calculatedSpeed}, Loop=${isLooping}`);
+        executePlayback(start, end, calculatedSpeed, notes, isLooping);
+    };
 
     try {
         const currentSrc = player.source?.sources?.[0]?.src;
 
         if (currentSrc === videoSrc) {
             console.debug('[Player: Play Video] Source unchanged, skipping reload');
-            executePlayback(start, end, finalSpeed, notes, isLooping);
+            playWithResolvedMetadata();
             return;
         }
 
@@ -362,10 +366,7 @@ function playVideo({
             sources: [{ src: videoSrc, type: 'video/mp4' }]
         };
 
-        player.once('loadedmetadata', () => {
-            console.debug(`[Player: Play Video] Metadata loaded for "${video_filename}". Preparing playback.`);
-            executePlayback(start, end, finalSpeed, notes, isLooping);
-        });
+        player.once('loadedmetadata', playWithResolvedMetadata);
 
         player.once('error', (error) => {
             console.error('[Player: Play Video] Error loading video:', error);
