@@ -2,8 +2,7 @@
 "use strict";
 import { setupPlaylistButtons, initializePlaylists } from './playlist.js';
 import { setupMovesTable } from './movesTable.js';
-import { initializePlayerUI, setupSpeedControl, setupKeyboardControls } from './player.js';
-import { updateTagFilter } from './tagFilter.js';
+import { initializeSpeedSlider, initializePlayerUI, setupKeyboardControls } from './player.js';
 
 // Export global variables
 export let allMoves = [];
@@ -38,10 +37,10 @@ async function initializeApp(danceType) {
     }
 
     // Initialize components
-    setupPlaylistButtons(); // 1. Set up playlists
-    initializePlaylists();  // Activates the first playlist
-    setupMovesTable(); // 2. Render the moves table based on the playlist and tag filter
-    setupSpeedControl();
+    setupPlaylistButtons();     // Set up playlists
+    initializePlaylists();      // Activates the first playlist
+    setupMovesTable();          // Render the moves table based on the playlist and tag filter
+    initializeSpeedSlider();
     initializePlayerUI();
     setupKeyboardControls();
 

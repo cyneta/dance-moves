@@ -67,29 +67,35 @@ function updateSpeedFromSlider(sliderIndex) {
     console.debug(`[Player] Speed updated to ${speed} (Slider index: ${sliderIndex}).`);
 }
 
-// Setup Speed Control
-export function setupSpeedControl() {
+// Initialize and Setup Speed Slider
+export function initializeSpeedSlider() {
     const slider = document.getElementById('speed-slider');
-    slider.addEventListener('input', (event) => {
-        const sliderIndex = parseInt(event.target.value, 10);
-        updateSpeedFromSlider(sliderIndex);
-        isSpeedOverride = true;
-        console.info('[Player] Speed override activated via slider.');
-    });
-}
+    if (!slider) {
+        console.error('[Player] Speed slider element not found in the DOM.');
+        return;
+    }
 
-// Initialize Speed Slider
-function initializeSpeedSlider(slider) {
+    // Initialize slider to default speed
     const defaultSpeed = 1.0;
     const defaultIndex = speeds.indexOf(defaultSpeed);
 
     if (defaultIndex !== -1) {
-        slider.value = defaultIndex;
-        updateSpeedFromSlider(defaultIndex);
+        slider.value = defaultIndex;            // Set slider position
+        updateSpeedFromSlider(defaultIndex);    // Sync player speed
         console.info(`[Player] Speed slider initialized to ${defaultSpeed}x.`);
     } else {
         console.warn('[Player] Default speed (1.0) not found in speeds array.');
     }
+
+    // Set up event listener for slider interaction
+    slider.addEventListener('input', (event) => {
+        const sliderIndex = parseInt(event.target.value, 10);
+        updateSpeedFromSlider(sliderIndex);
+        isSpeedOverride = true; // Mark override as active
+        console.info('[Player] Speed override activated via slider.');
+    });
+
+    console.info('[Player] Speed slider setup and initialization complete.');
 }
 
 // Setup Keyboard Controls
