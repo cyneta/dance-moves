@@ -312,7 +312,7 @@ function applyLooping(start, end) {
         if (player.currentTime >= end || player.ended) {
             console.info(`[Looping] Loop triggered. Looping back to start (${start}). Current time: ${player.currentTime}`);
             player.currentTime = start;
-            // player.play();
+            player.play();
         }
     }
 

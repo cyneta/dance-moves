@@ -11,6 +11,16 @@ let currentTag = DEFAULT_TAG;
 export function setTag(tag, playlist) {
     currentTag = tag || DEFAULT_TAG;
 
+    // Update dropdown button text
+    const tagDropdownButton = document.getElementById('tagDropdown');
+    if (tagDropdownButton) {
+        tagDropdownButton.innerText = currentTag === DEFAULT_TAG 
+            ? `Tag filter: ${DEFAULT_TAG}` 
+            : `Tag filter: ${currentTag}`;
+    } else {
+        console.warn('[Tag Filter] Dropdown button element not found.');
+    }
+
     const filteredMoves = allMoves.filter(move => {
         if (playlist && !move.playlist_tags?.[playlist]?.length) {
             return false;
