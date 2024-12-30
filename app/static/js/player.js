@@ -474,3 +474,41 @@ function playVideo({
         displayNotes("Unexpected error occurred while loading video.");
     }
 }
+
+// Add this function to handle player placement based on orientation
+function handleOrientationChange() {
+    const playerWrapper = document.getElementById('player-wrapper');
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    const notesCard = leftPanel.querySelector('.card'); // Reference the entire card containing notes
+
+    if (!playerWrapper || !leftPanel || !rightPanel || !notesCard) {
+        console.error('[Orientation Change] Missing required elements for orientation handling.');
+        return;
+    }
+
+    if (window.innerHeight > window.innerWidth) {
+        // Portrait mode: Move player above the notes card
+        if (!leftPanel.contains(playerWrapper)) {
+            if (notesCard && leftPanel.contains(notesCard)) {
+                leftPanel.insertBefore(playerWrapper, notesCard);
+            } else {
+                leftPanel.appendChild(playerWrapper); // Fallback to appending at the end
+            }
+            console.debug('[Orientation Change] Player moved to left panel (portrait mode).');
+        }
+    } else {
+        // Landscape mode: Move player to the right panel
+        if (!rightPanel.contains(playerWrapper)) {
+            rightPanel.appendChild(playerWrapper);
+            console.debug('[Orientation Change] Player moved to right panel (landscape mode).');
+        }
+    }
+}
+
+// Initialize orientation handling
+export function initializeOrientationHandling() {
+    handleOrientationChange(); // Initial placement
+    window.addEventListener('resize', handleOrientationChange); // Adjust on window resize
+    console.info('[Orientation Change] Orientation handling initialized.');
+}

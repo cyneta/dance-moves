@@ -2,7 +2,7 @@
 "use strict";
 import { initializePlaylists, setupPlaylistButtons } from './playlist.js';
 import { setupMovesTable } from './movesTable.js';
-import { initializeSpeedSlider, setupAutoplayToggle, initializePlayerUI, setupKeyboardControls } from './player.js';
+import { initializeSpeedSlider, setupAutoplayToggle, initializePlayerUI, setupKeyboardControls, initializeOrientationHandling } from './player.js';
 
 // Export global variables
 export let allMoves = [];
@@ -37,13 +37,14 @@ async function initializeApp(danceType) {
     }
 
     // Initialize components
-    setupPlaylistButtons();     // Set up playlists
-    initializePlaylists();      // Activates the first playlist
-    setupMovesTable();          // Render the moves table based on the playlist and tag filter
-    initializePlayerUI();       // Set up the player UI
-    initializeSpeedSlider();    // Set up the speed slider, which controls the player speed
-    setupAutoplayToggle();      // Set up the autoplay toggle switch
-    setupKeyboardControls();    // Set up keyboard controls for the player
+    setupPlaylistButtons();             // Set up playlists
+    initializePlaylists();              // Activates the first playlist
+    setupMovesTable();                  // Render the moves table based on the playlist and tag filter
+    initializePlayerUI();               // Set up the player UI
+    initializeSpeedSlider();            // Set up the speed slider, which controls the player speed
+    setupAutoplayToggle();              // Set up the autoplay toggle switch
+    setupKeyboardControls();            // Set up keyboard controls for the player
+    initializeOrientationHandling();    // Set up orientation handling for mobile devices
 
     console.info('[Index] Application initialized.');
 }
