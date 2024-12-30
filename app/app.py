@@ -123,6 +123,11 @@ def process_row(row):
 
     move_name = processed["move_name"]
 
+    # Parse time fields using time_to_seconds
+    processed["loop_start"] = time_to_seconds(processed["loop_start"])
+    processed["loop_end"] = time_to_seconds(processed["loop_end"])
+    processed["guide_start"] = time_to_seconds(processed["guide_start"])
+
     # Validate numeric fields
     processed["loop_start"] = get_valid_numeric_value(
         value=processed["loop_start"],
