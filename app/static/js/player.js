@@ -208,18 +208,20 @@ export function initializeSpeedSlider() {
 }
 
 // Setup Keyboard Controls
-export function setupKeyboardControls() {
+export function setupKeyboardControls() { 
     document.addEventListener('keydown', (event) => {
         if (!player) return;
-
+    
         const key = event.key;
         const shiftPressed = event.shiftKey;
         const seekAmount = shiftPressed ? 5 : 1;
-
-        if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'm', 'f'].includes(key)) {
+    
+        console.debug('[Debug] Keydown event captured:', { key, shiftPressed });
+    
+        if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'm', 'f', 's', 'S'].includes(key)) {
             event.preventDefault();
         }
-
+    
         switch (key) {
             case ' ':
                 player.togglePlay();
@@ -232,9 +234,17 @@ export function setupKeyboardControls() {
                 break;
             case 'ArrowUp':
                 player.volume = Math.min(1, player.volume + 0.1);
+                console.debug(`[Volume] Increased to: ${player.volume}`);
                 break;
             case 'ArrowDown':
                 player.volume = Math.max(0, player.volume - 0.1);
+                console.debug(`[Volume] Decreased to: ${player.volume}`);
+                break;
+            case 'S':
+                adjustSpeed(1);
+                break;
+            case 's':
+                adjustSpeed(-1);
                 break;
             case 'Home':
                 player.currentTime = 0;
@@ -251,6 +261,22 @@ export function setupKeyboardControls() {
         }
     });
 }
+
+// Function to adjust the speed slider
+function adjustSpeed(change) {
+    const slider = document.getElementById('speed-slider');
+    if (!slider) {
+        console.error('[Speed Control] Speed slider not found in the DOM.');
+        return;
+    }
+
+    const currentValue = parseInt(slider.value, 10);
+    const newValue = Math.min(Math.max(currentValue + change, 0), speeds.length - 1);
+
+    slider.value = newValue;
+    slider.dispatchEvent(new Event('input'));
+    console.debug(`[Speed Control] Speed slider adjusted to index: ${newValue}`);
+}    
 
 // Splash Screen Functions
 function showInstructions(text) {
@@ -317,11 +343,11 @@ export function initializePlayerUI() {
             console.debug('[Player UI] Instructions hidden and focus set to media.');
         });
     }
-    
+
     // Handle moveAction events
     on('moveAction', ({ moveIndex, action }) => {
         console.debug('[moveAction] Event triggered with parameters:', { moveIndex, action });
-    
+
         // Fetch the move by index
         const move = allMoves[moveIndex];
         if (!move) {
@@ -329,16 +355,16 @@ export function initializePlayerUI() {
             console.debug('[Player] All available moves:', allMoves);
             return;
         }
-    
+
         console.debug('[Player] Move data retrieved:', move);
-    
+
         // Destructure the move data
         const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
-    
+
         // Determine playback speed
         const speed = determinePlaybackSpeed(action, loop_speed);
         console.debug('[Player] Determined playback speed:', speed);
-    
+
         // Update the speed slider
         const slider = document.getElementById('speed-slider');
         if (!slider) {
@@ -346,21 +372,21 @@ export function initializePlayerUI() {
             return;
         }
         const sliderIndex = speeds.indexOf(speed);
-    
+
         if (sliderIndex === -1) {
             console.error('[Player] Speed not found in predefined speeds:', speed);
             console.debug('[Player] Predefined speeds:', speeds);
             return;
         }
-    
+
         console.debug('[Player] Updating speed slider to index:', sliderIndex);
         slider.value = sliderIndex;
         slider.dispatchEvent(new Event('input'));
-    
+
         // Update the global currentVideoIndex to track the current video
         currentVideoIndex = moveIndex;
         console.debug(`[Player] Updated currentVideoIndex to ${currentVideoIndex}.`);
-    
+
         // Play the selected video
         playVideo({
             video_filename,
@@ -379,9 +405,16 @@ function displayNotes(notes) {
     console.debug(`[Notes] Updated notes: ${formattedNotes}`);
 }
 
-function executePlayback(start, end, speed, notes, isLooping) {
-    console.debug('[Execute Playback] Starting playback logic');
+function startPlayback(video_filename, start, end, speed, notes, isLooping) {
+    console.info(`[Start Playback] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
 
+    // Update current video index
+    const moveIndex = allMoves.findIndex(move => move.video_filename === video_filename);
+    if (moveIndex !== -1) {
+        currentVideoIndex = moveIndex;
+    }
+
+    updateCurrentMoveHighlight();
     setPlayerSpeed(speed);
     displayNotes(notes);
 
@@ -390,10 +423,43 @@ function executePlayback(start, end, speed, notes, isLooping) {
     }
 
     seekToStart(start).then(() => {
-        console.debug('[Execute Playback] Seek completed');
+        console.debug('[Start Playback] Seek completed');
     }).catch(error => {
-        console.error('[Execute Playback] Seek failed:', error);
+        console.error('[Start Playback] Seek failed:', error);
     });
+}
+
+function updateCurrentMoveHighlight() {
+    const moveTable = document.querySelector('#moves-table-container tbody');
+    if (!moveTable) {
+        console.error('[Current Move] Moves table not found.');
+        return;
+    }
+
+    // Clear previous bolding
+    Array.from(moveTable.rows).forEach(row => {
+        const moveNameCell = row.cells[0]; // Assume move name is in the first column
+        if (moveNameCell) {
+            moveNameCell.classList.remove('current-move');
+        }
+    });
+
+    if (currentVideoIndex === -1 || !allMoves[currentVideoIndex]) {
+        console.info('[Current Move] No move is currently playing.');
+        return;
+    }
+
+    const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
+    if (currentTableIndex !== -1) {
+        const currentRow = moveTable.rows[currentTableIndex];
+        if (currentRow) {
+            const moveNameCell = currentRow.cells[0];
+            if (moveNameCell) {
+                moveNameCell.classList.add('current-move');
+                console.info(`[Current Move] Bolded move name for "${allMoves[currentVideoIndex].move_name}".`);
+            }
+        }
+    }
 }
 
 function seekToStart(start) {
@@ -410,14 +476,14 @@ function seekToStart(start) {
                 } else {
                     console.error(`[Seek Failed] Time mismatch: Target time=${start}, Current time=${player.currentTime}`);
                     reject(new Error('Seek operation failed.'));
-                }
-            });
+                }    
+            });    
         }).catch(error => {
             console.error('[Seek] Failed to start playback:', error);
             reject(error);
-        });
-    });
-}
+        });    
+    });    
+}    
 
 function playVideo({
     video_filename,
@@ -442,27 +508,16 @@ function playVideo({
     const videoSrc = `/static/videos/${video_filename}`;
     console.debug(`[Player: Play Video] Resolving playback for "${video_filename}".`);
 
-    const playWithResolvedMetadata = () => {
-        console.info(`[Player: Play Video] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${calculatedSpeed}, Loop=${isLooping}`);
-        executePlayback(start, end, calculatedSpeed, notes, isLooping);
-    };
-
     try {
-        const currentSrc = player.source?.sources?.[0]?.src;
-
-        if (currentSrc === videoSrc) {
-            console.debug('[Player: Play Video] Source unchanged, skipping reload');
-            playWithResolvedMetadata();
-            return;
-        }
-
         console.debug('[Player: Play Video] Updating player source');
         player.source = {
             type: 'video',
             sources: [{ src: videoSrc, type: 'video/mp4' }]
         };
 
-        player.once('loadedmetadata', playWithResolvedMetadata);
+        player.once('loadedmetadata', () => {
+            startPlayback(video_filename, start, end, calculatedSpeed, notes, isLooping);
+        });
 
         player.once('error', (error) => {
             console.error('[Player: Play Video] Error loading video:', error);

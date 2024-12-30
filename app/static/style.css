@@ -101,6 +101,10 @@ html, body {
     margin: 0;
 }
 
+.current-move {
+    font-weight: bold;
+}
+
 #speed-control {
     display: flex; /* Use flexbox for alignment */
     align-items: center; /* Vertically align label, slider, and display */
