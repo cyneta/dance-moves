@@ -311,10 +311,13 @@ export function initializePlayerUI() {
 
     // Attach hideInstructions to player "play" event
     if (player) {
-        player.on('play', hideInstructions);
-        console.debug('[Player UI] Attached hideInstructions to player "play" event.');
+        player.on('play', () => {
+            hideInstructions();
+            player.media.focus(); // Ensure focus is set to the player
+            console.debug('[Player UI] Instructions hidden and focus set to media.');
+        });
     }
-
+    
     // Handle moveAction events
     on('moveAction', ({ moveIndex, action }) => {
         console.debug('[moveAction] Event triggered with parameters:', { moveIndex, action });
