@@ -1,8 +1,17 @@
 // index.js
 "use strict";
-import { initializePlaylists, setupPlaylistButtons } from './playlist.js';
+import { setupPlaylistButtons, initializePlaylists, selectPlaylist } from './playlist.js';
 import { setupMovesTable } from './movesTable.js';
-import { initializeSpeedSlider, setupAutoplayToggle, initializePlayerUI, setupKeyboardControls, initializeOrientationHandling } from './player.js';
+import { initializePlayerUI,
+     updateURLWithState,
+     initializeSpeedSlider,
+     setupAutoplayToggle,
+     setAutoplayEnabled,
+     setupKeyboardControls,
+     initializeOrientationHandling,
+     setPlayerSpeed,
+     setLoopEnabled,
+     playVideoByDesignator } from './player.js';
 
 // Export global variables
 export let allMoves = [];
@@ -16,9 +25,11 @@ async function fetchDanceData(danceType) {
         if (!response.ok) {
             throw new Error(`Failed to fetch data: ${response.statusText}`);
         }
-        const { moves, playlists } = await response.json();
+        const { moves,
+             playlists } = await response.json();
         console.info(`[API] Loaded ${moves.length} moves and ${playlists.length} playlists.`);
-        return { moves, playlists };
+        return { moves,
+             playlists };
     } catch (error) {
         console.error('[API] Error loading data:', error);
         return { playlists: [], moves: [] };
@@ -51,12 +62,79 @@ async function initializeApp(danceType) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.info('[Index] DOM content loaded.');
-    const danceType = document.body.dataset.danceType || 'salsa';
+
+    const queryParams = parseQueryParams();
+    const danceType = queryParams.style || 'salsa'; // Default to salsa if style is missing
     await initializeApp(danceType);
 
-    // Validate tag dropdown menu
-    const tagDropdown = document.getElementById('tagDropdownMenu');
-    if (!tagDropdown) {
-        console.error('[Tag Filter] Tag dropdown menu not found.');
-    }
+    // Apply state from the URL
+    updateStateFromURL();
 });
+
+function parseQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+
+    return {
+        style: params.get('style'),
+        playlist: params.get('playlist'),
+        video: params.get('video'),
+        loop: params.get('loop') === 'true',
+        autoplay: params.get('autoplay') === 'true', // Parse autoplay as a boolean
+        speed: parseFloat(params.get('speed')) || 1.0,
+        volume: parseFloat(params.get('volume')) || 1.0,
+    };
+}
+
+function updateStateFromURL() {
+    const queryParams = parseQueryParams();
+
+    // Apply dance style and initialize app only if style is specified
+    if (queryParams.style) {
+        console.info(`[URL] Initializing app with style: ${queryParams.style}`);
+        initializeApp(queryParams.style);
+    }
+
+    // Apply playlist if specified
+    if (queryParams.playlist) {
+        console.info(`[URL] Selecting playlist: ${queryParams.playlist}`);
+        selectPlaylist(queryParams.playlist);
+    }
+
+    // Apply loop state
+    if (queryParams.loop !== undefined) {
+        const loopEnabled = queryParams.loop === 'true'; // Convert to boolean
+        setLoopEnabled(loopEnabled);
+        console.info(`[Player] Loop state set to: ${loopEnabled}`);
+    }
+
+    // Apply playback speed
+    if (queryParams.speed) {
+        const speed = parseFloat(queryParams.speed);
+        setPlayerSpeed(speed);
+        console.info(`[Player] Speed set to: ${speed}`);
+    }
+
+    // Apply volume
+    if (queryParams.volume !== undefined) {
+        const volume = parseFloat(queryParams.volume);
+        if (!isNaN(volume)) {
+            player.volume = volume;
+            console.info(`[Player] Volume set to: ${volume}`);
+        } else {
+            console.error(`[URL] Invalid volume: ${queryParams.volume}`);
+        }
+    }
+
+    // Apply autoplay state
+    if (queryParams.autoplay !== undefined) {
+        const autoplayEnabled = queryParams.autoplay === 'true'; // Convert to boolean
+        setAutoplayEnabled(autoplayEnabled);
+        console.info(`[Player] Autoplay state set to: ${autoplayEnabled}`);
+    }
+
+    // Apply video state
+    if (queryParams.video) {
+        console.info(`[URL] Loading video: ${queryParams.video}`);
+        playVideoByDesignator(queryParams.video);
+    }
+}
