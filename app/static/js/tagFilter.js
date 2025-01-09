@@ -8,6 +8,11 @@ console.info('[Global] tagFilter.js loaded');
 const DEFAULT_TAG = 'no filter';
 let currentTag = DEFAULT_TAG;
 
+// Getter for the current tag
+export function getCurrentTag() {
+    return currentTag;
+}
+
 // Updates the tag dropdown button text
 function updateDropdownButtonText(tag) {
     const tagDropdownButton = document.getElementById('tagDropdown');

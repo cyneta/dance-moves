@@ -3,6 +3,7 @@
 import { allMoves } from './index.js';
 import { on } from './common.js';
 import { moveTableIndices } from './movesTable.js';
+import { getCurrentTag } from './tagFilter.js';
 
 console.info('[Global] player.js loaded');
 
@@ -14,6 +15,16 @@ let player;
 let isSpeedOverride = false;
 let isAutoplayEnabled = false;
 let currentVideoIndex = -1;         // Index of the currently playing video in allMoves
+let isLoopEnabled = false;
+
+export function setLoopEnabled(enabled) {
+    isLoopEnabled = enabled;
+    console.info(`[Player] Looping is now ${enabled ? 'enabled' : 'disabled'}.`);
+}
+
+export function getLoopEnabled() {
+    return isLoopEnabled;
+}
 
 // Setup the autoplay toggle button
 export function setupAutoplayToggle() {
@@ -25,7 +36,7 @@ export function setupAutoplayToggle() {
 
     autoplayToggle.addEventListener('change', (event) => {
         const isEnabled = event.target.checked;
-        toggleAutoplay(isEnabled);
+        setAutoplayEnabled(isEnabled);
     });
 
     console.info('[Autoplay] Toggle switch setup complete.');
@@ -98,7 +109,7 @@ function playNextVideo() {
     // Find the current table index (position within moveTableIndices)
     const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
     if (currentTableIndex === -1) {
-        console.error('[Autoplay] Current video index is not in the table.');
+        console.error(`[Autoplay] Current video index is not in the table: ${currentVideoIndex}.`);
         return;
     }
 
@@ -127,9 +138,17 @@ function playNextVideo() {
         start: nextMove.loop_start,
         end: nextMove.loop_end,
         speed: nextMove.loop_speed,
-        notes: nextMove.notes,
-        isLooping: true
+        notes: nextMove.notes
     });
+}
+
+export function setAutoplayEnabled(enabled) {
+    isAutoplayEnabled = enabled; // Update the global autoplay state
+    const autoplayToggle = document.getElementById('autoplay-switch');
+    if (autoplayToggle) {
+        autoplayToggle.checked = enabled; // Sync the UI toggle
+    }
+    console.info(`[Player] Autoplay enabled: ${enabled}`);
 }
 
 // Set Player Speed
@@ -150,15 +169,12 @@ export function setPlayerSpeed(speed) {
 }
 
 // Determine Playback Speed
-function determinePlaybackSpeed(action, loopSpeed) {
-    if (action === 'guide') return 1.0;
-
+export function determinePlaybackSpeed(loopSpeed) {
     if (isSpeedOverride) {
         const sliderValue = parseInt(document.getElementById('speed-slider')?.value, 10);
-        return speeds[sliderValue] || 1.0;
+        return speeds[sliderValue] || 1.0; // Use the override value if set
     }
-
-    return speeds.reduce((prev, curr) => Math.abs(curr - loopSpeed) < Math.abs(prev - loopSpeed) ? curr : prev);
+    return loopSpeed || 1.0; // Default to loop speed or 1x
 }
 
 // Update Speed From Slider
@@ -345,9 +361,9 @@ export function initializePlayerUI() {
     }
 
     // Handle moveAction events
-    on('moveAction', ({ moveIndex, action }) => {
-        console.debug('[moveAction] Event triggered with parameters:', { moveIndex, action });
-
+    on('moveAction', ({ moveIndex }) => {
+        console.debug('[moveAction] Event triggered with parameters:', { moveIndex });
+    
         // Fetch the move by index
         const move = allMoves[moveIndex];
         if (!move) {
@@ -355,16 +371,16 @@ export function initializePlayerUI() {
             console.debug('[Player] All available moves:', allMoves);
             return;
         }
-
+    
         console.debug('[Player] Move data retrieved:', move);
-
+    
         // Destructure the move data
         const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
-
-        // Determine playback speed
-        const speed = determinePlaybackSpeed(action, loop_speed);
+    
+        // Determine playback speed with override logic
+        const speed = determinePlaybackSpeed(loop_speed);
         console.debug('[Player] Determined playback speed:', speed);
-
+    
         // Update the speed slider
         const slider = document.getElementById('speed-slider');
         if (!slider) {
@@ -372,29 +388,29 @@ export function initializePlayerUI() {
             return;
         }
         const sliderIndex = speeds.indexOf(speed);
-
+    
         if (sliderIndex === -1) {
             console.error('[Player] Speed not found in predefined speeds:', speed);
             console.debug('[Player] Predefined speeds:', speeds);
             return;
         }
-
+    
         console.debug('[Player] Updating speed slider to index:', sliderIndex);
         slider.value = sliderIndex;
         slider.dispatchEvent(new Event('input'));
-
+    
         // Update the global currentVideoIndex to track the current video
         currentVideoIndex = moveIndex;
         console.debug(`[Player] Updated currentVideoIndex to ${currentVideoIndex}.`);
 
         // Play the selected video
+        const isLooping = getLoopEnabled(); // Use the global loop state
         playVideo({
             video_filename,
-            start: action === 'loop' ? loop_start : guide_start,
-            end: action === 'loop' ? loop_end : null,
+            start: isLooping ? loop_start : guide_start,
+            end: isLooping ? loop_end : null,
             speed,
-            notes,
-            isLooping: action === 'loop'
+            notes
         });
     });
 }
@@ -405,8 +421,8 @@ function displayNotes(notes) {
     console.debug(`[Notes] Updated notes: ${formattedNotes}`);
 }
 
-function startPlayback(video_filename, start, end, speed, notes, isLooping) {
-    console.info(`[Start Playback] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}, Loop=${isLooping}`);
+function startPlayback(video_filename, start, end, speed, notes) {
+    console.info(`[Start Playback] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}`);
 
     // Update current video index
     const moveIndex = allMoves.findIndex(move => move.video_filename === video_filename);
@@ -418,7 +434,7 @@ function startPlayback(video_filename, start, end, speed, notes, isLooping) {
     setPlayerSpeed(speed);
     displayNotes(notes);
 
-    if (isLooping && end !== null) {
+    if (isLoopEnabled && end !== null) {
         applyLooping(start, end);
     }
 
@@ -485,13 +501,12 @@ function seekToStart(start) {
     });    
 }    
 
-function playVideo({
+export function playVideo({
     video_filename,
     start,
     end,
     speed = 1,
-    notes = '',
-    isLooping = false
+    notes = ''
 }) {
     if (!video_filename) {
         console.warn('[Player: Play Video] No video filename provided. Displaying placeholder.');
@@ -516,7 +531,7 @@ function playVideo({
         };
 
         player.once('loadedmetadata', () => {
-            startPlayback(video_filename, start, end, calculatedSpeed, notes, isLooping);
+            startPlayback(video_filename, start, end, calculatedSpeed, notes);
         });
 
         player.once('error', (error) => {
@@ -530,6 +545,29 @@ function playVideo({
         document.getElementById('player').style.display = 'none';
         document.getElementById('player-placeholder').style.display = 'block';
         displayNotes("Unexpected error occurred while loading video.");
+    }
+}
+
+export function playVideoByDesignator(designator) {
+    const move = allMoves.find(
+        move => move.video_id === designator || move.video_filename === designator
+    );
+
+    if (move) {
+        playVideo({
+            video_filename: move.video_filename,
+            start: move.loop_start || 0,
+            end: move.loop_end || null,
+            speed: player.speed, // Use the player's current speed
+        });
+
+        // Ensure the video is paused after loading
+        player.once('loadedmetadata', () => {
+            player.pause(); // Pause the player after metadata is loaded
+            console.info(`[Player] Video "${move.video_filename}" loaded and paused.`);
+        });
+    } else {
+        console.error(`[Player] Video not found for designator: ${designator}`);
     }
 }
 

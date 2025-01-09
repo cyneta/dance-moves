@@ -2,7 +2,7 @@
 "use strict";
 import { allMoves } from './index.js';
 import { trigger } from './common.js';
-import { resetCurrentVideoIndex, resetAutoplaySwitch } from './player.js';
+import { resetCurrentVideoIndex, resetAutoplaySwitch, setLoopEnabled } from './player.js';
 
 export let moveTableIndices = [];   // store the indices (into allMoves) of moves displayed in the table
 
@@ -12,21 +12,26 @@ console.info('[Global] movesTable.js loaded');
 export function setupMovesTable() {
     document.getElementById('moves-table-container').addEventListener('click', (event) => {
         const clickedButton = event.target;
-
+    
         if (clickedButton.tagName === 'BUTTON' && clickedButton.classList.contains('loop-guide-button')) {
             const action = clickedButton.textContent.trim().toLowerCase();
-            const currentRow = clickedButton.closest('tr');
-            const rowIndex = Array.from(currentRow.parentNode.children).indexOf(currentRow); // Find the row index
-
-            if (rowIndex < 0 || rowIndex >= moveTableIndices.length) {
-                console.error('[Moves Table] Invalid row index in the table.');
-                return;
+    
+            // Set or clear the loop state based on the button action
+            if (action === 'loop') {
+                setLoopEnabled(true); // Enable looping
+                console.info('[Moves Table] Loop mode enabled.');
+            } else if (action === 'guide') {
+                setLoopEnabled(false); // Disable looping
+                console.info('[Moves Table] Guide mode selected, looping disabled.');
             }
-
-            const moveIndex = moveTableIndices[rowIndex]; // Map the row index to the global indices array
-
-            console.info(`[Moves Table] Action "${action}" triggered for move index ${moveIndex}.`);
-            trigger('moveAction', { moveIndex, action });
+    
+            // Determine the move index based on the clicked row
+            const currentRow = clickedButton.closest('tr');
+            const rowIndex = Array.from(currentRow.parentNode.children).indexOf(currentRow);
+            const moveIndex = moveTableIndices[rowIndex];
+    
+            // Trigger moveAction with the move index
+            trigger('moveAction', { moveIndex });
         }
     });
 }
