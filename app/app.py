@@ -142,7 +142,7 @@ def process_row(row):
         default=processed["loop_start"] + 10,
         field_name="loop_end",
         move_name=move_name,
-        lower_bound=processed["loop_start"] + 5
+        lower_bound=processed["loop_start"] + 3
     )
 
     processed["loop_speed"] = get_valid_numeric_value(
