@@ -77,6 +77,22 @@ function hideStepCounter() {
     if (stepCounter) stepCounter.style.display = 'none';
 }
 
+function updateAbsoluteTimer() {
+    const absoluteTimer = document.getElementById('absolute-timer');
+    if (!absoluteTimer || !player || !player.currentTime) return;
+
+    const currentTime = player.currentTime.toFixed(2);
+    absoluteTimer.textContent = `Time: ${currentTime}`;
+}
+
+function updateRelativeTimer(one_time = 0) {
+    const relativeTimer = document.getElementById('relative-timer');
+    if (!relativeTimer || !player || !player.currentTime) return;
+
+    const relativeTime = (player.currentTime - one_time).toFixed(2);
+    relativeTimer.textContent = `${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
+}
+
 function updateStepCounter({ one_time, measure_count, measure_time, visibleCounts }) {
     const stepCounter = document.getElementById('step-counter');
     if (!stepCounter || !player || !player.currentTime) return;
@@ -121,6 +137,10 @@ function applyLooping(start, end, counterParams) {
                 player.play();
             }
         }
+
+        // Update the frame timer
+        updateAbsoluteTimer();
+        updateRelativeTimer(counterParams?.one_time);
 
         // Update the step counter
         if (counterParams) updateStepCounter(counterParams);
