@@ -89,7 +89,7 @@ function updateFrameTimer(one_time = 0) {
     frameTimer.textContent = `${absoluteTime} / ${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
 }
 
-function updateStepCounter({ one_time, measure_count, measure_time, visibleCounts }) {
+function updateStepCounter({ one_time, measure_time, measure_count, visibleCounts }) {
     const stepCounter = document.getElementById('step-counter');
     if (!stepCounter || !player || !player.currentTime) return;
 

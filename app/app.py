@@ -171,18 +171,18 @@ def process_row(row):
         try:
             logging.debug(f"[Step Counter] Raw step_counter BEFORE SPLIT: {step_counter}")
 
-            # Use regex to split into three components and keep the visibleCounts intact
+            # Use regex to split into four components
             match = re.match(r'^([^,]+),([^,]+),([^,]+),(.+)$', step_counter)
             if not match:
                 raise ValueError(f"Invalid step_counter format: {step_counter}")
 
-            one_time = float(match.group(1).strip())  # First component: one_time
-            measure_count = int(match.group(2).strip())  # Second component: measure_count
-            measure_time = float(match.group(3).strip())  # Third component: measure_time
-            visible_counts_raw = match.group(4).strip()  # Fourth component: visibleCounts
+            one_time = float(match.group(1).strip())
+            measure_time = float(match.group(2).strip()) / 2
+            measure_count = float(match.group(3).strip())
+            visible_counts_raw = match.group(4).strip()
 
-            logging.debug(f"[Step Counter] Parsed components - one_time: {one_time}, measure_count: {measure_count}, "
-                        f"measure_time: {measure_time}, visibleCounts: {visible_counts_raw}")
+            logging.debug(f"[Step Counter] Parsed components - one_time: {one_time}, measure_time: {measure_time}, "
+                        f"measure_count: {measure_count}, visibleCounts: {visible_counts_raw}")
 
             # Parse the visibleCounts array
             if visible_counts_raw.startswith('[') and visible_counts_raw.endswith(']'):
@@ -193,14 +193,13 @@ def process_row(row):
             # Assign parsed step_counter
             processed["step_counter"] = {
                 "one_time": one_time,
-                "measure_count": measure_count,
                 "measure_time": measure_time,
+                "measure_count": measure_count,
                 "visibleCounts": visible_counts,
             }
         except (ValueError, TypeError) as e:
             logging.error(f"[Step Counter] Invalid format for move '{move_name}': {step_counter}. Error: {e}")
             processed["step_counter"] = None
-
 
     else:
         logging.warning(f"[Step Counter] No step_counter defined for move '{move_name}'.")
