@@ -20,6 +20,10 @@ let isLoopEnabled = false;
 export function setLoopEnabled(enabled) {
     isLoopEnabled = enabled;
     console.info(`[Player] Looping is now ${enabled ? 'enabled' : 'disabled'}.`);
+
+    if (!enabled) {
+        hideStepCounter();
+    }    
 }
 
 export function getLoopEnabled() {
@@ -63,8 +67,34 @@ export function resetCurrentVideoIndex() {
     console.info('[Player] currentVideoIndex has been reset.');
 }
 
+function showStepCounter() {
+    const stepCounter = document.getElementById('step-counter');
+    if (stepCounter) stepCounter.style.display = 'block';
+}
+
+function hideStepCounter() {
+    const stepCounter = document.getElementById('step-counter');
+    if (stepCounter) stepCounter.style.display = 'none';
+}
+
+function updateStepCounter({ one_time, measure_count, measure_time, visibleCounts }) {
+    const stepCounter = document.getElementById('step-counter');
+    if (!stepCounter || !player || !player.currentTime) return;
+
+    const elapsedTime = (player.currentTime - one_time + measure_time) % measure_time;
+    const step = Math.floor((elapsedTime / measure_time) * measure_count) + 1;
+
+    // Only display steps in visibleCounts
+    if (visibleCounts.includes(step)) {
+        stepCounter.textContent = step; // Display the step number
+        stepCounter.style.display = 'block';
+    } else {
+        stepCounter.style.display = 'none'; // Hide for skipped counts
+    }
+}
+
 // Apply looping with autoplay support
-function applyLooping(start, end) {
+function applyLooping(start, end, counterParams) {
     console.debug(`[Looping] Applying loop: Start=${start}, End=${end}`);
 
     if (!player || !player.media) {
@@ -74,7 +104,7 @@ function applyLooping(start, end) {
 
     const media = player.media;
 
-    // Remove any existing loop handler
+    // Remove existing loop handler
     if (media.loopHandler) {
         media.removeEventListener('timeupdate', media.loopHandler);
         console.debug('[Looping] Cleared existing loop listener.');
@@ -91,11 +121,17 @@ function applyLooping(start, end) {
                 player.play();
             }
         }
+
+        // Update the step counter
+        if (counterParams) updateStepCounter(counterParams);
     };
 
-    // Add the new loop handler
+    // Attach new loop handler
     media.addEventListener('timeupdate', loopHandler);
     media.loopHandler = loopHandler;
+
+    // Show the step counter during looping
+    showStepCounter();
     console.debug('[Looping] New loop listener added.');
 }
 
@@ -435,7 +471,12 @@ function startPlayback(video_filename, start, end, speed, notes) {
     displayNotes(notes);
 
     if (isLoopEnabled && end !== null) {
-        applyLooping(start, end);
+        applyLooping(start, end, {
+            one_time: 136.7,                   // The time when the first "one" occurs in seconds
+            measure_count: 8,                  // Number of steps in one measure
+            measure_time: 3,                   // Duration of one measure in seconds      
+            visibleCounts: [1, 2, 3, 5, 6, 7]  // Display only these counts
+        });        
     }
 
     seekToStart(start).then(() => {

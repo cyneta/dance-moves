@@ -216,6 +216,21 @@ html, body {
     text-align: left; /* Ensures numbered list is left-aligned */
 }
 
+#step-counter {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: #add8e6;
+    font-size: 20vh;
+    z-index: 1000;
+    background-color: transparent;
+    padding: 0;
+    border: none;
+    display: none;
+    line-height: 1;
+    text-align: right;
+}
+
 /* Adjust Panels for iPhone Landscape */
 @media (max-width: 932px) and (orientation: landscape) {
     #left-panel {
