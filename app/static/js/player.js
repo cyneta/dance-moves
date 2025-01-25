@@ -77,20 +77,16 @@ function hideStepCounter() {
     if (stepCounter) stepCounter.style.display = 'none';
 }
 
-function updateAbsoluteTimer() {
-    const absoluteTimer = document.getElementById('absolute-timer');
-    if (!absoluteTimer || !player || !player.currentTime) return;
+function updateFrameTimer(one_time = 0) {
+    const frameTimer = document.getElementById('frame-timer');
+    if (!frameTimer || !player || !player.currentTime) return;
 
-    const currentTime = player.currentTime.toFixed(2);
-    absoluteTimer.textContent = `Time: ${currentTime}`;
-}
-
-function updateRelativeTimer(one_time = 0) {
-    const relativeTimer = document.getElementById('relative-timer');
-    if (!relativeTimer || !player || !player.currentTime) return;
-
+    // Get absolute and relative times
+    const absoluteTime = player.currentTime.toFixed(2);
     const relativeTime = (player.currentTime - one_time).toFixed(2);
-    relativeTimer.textContent = `${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
+
+    // Update the frame timer
+    frameTimer.textContent = `${absoluteTime} / ${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
 }
 
 function updateStepCounter({ one_time, measure_count, measure_time, visibleCounts }) {
@@ -110,7 +106,7 @@ function updateStepCounter({ one_time, measure_count, measure_time, visibleCount
 }
 
 // Apply looping with autoplay support
-function applyLooping(start, end, counterParams) {
+function applyLooping(start, end, stepCounterParams) {
     console.debug(`[Looping] Applying loop: Start=${start}, End=${end}`);
 
     if (!player || !player.media) {
@@ -139,11 +135,10 @@ function applyLooping(start, end, counterParams) {
         }
 
         // Update the frame timer
-        updateAbsoluteTimer();
-        updateRelativeTimer(counterParams?.one_time);
+        updateFrameTimer(stepCounterParams.one_time);
 
         // Update the step counter
-        if (counterParams) updateStepCounter(counterParams);
+        if (stepCounterParams) updateStepCounter(stepCounterParams);
     };
 
     // Attach new loop handler
