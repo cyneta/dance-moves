@@ -426,7 +426,7 @@ export function initializePlayerUI() {
         console.debug('[Player] Move data retrieved:', move);
     
         // Destructure the move data
-        const { video_filename, loop_start, loop_end, loop_speed, guide_start, notes } = move;
+        const { video_filename, loop_start, loop_end, loop_speed, step_counter, guide_start, notes } = move;
     
         // Determine playback speed with override logic
         const speed = determinePlaybackSpeed(loop_speed);
@@ -461,7 +461,8 @@ export function initializePlayerUI() {
             start: isLooping ? loop_start : guide_start,
             end: isLooping ? loop_end : null,
             speed,
-            notes
+            notes,
+            step_counter
         });
     });
 }
@@ -472,7 +473,7 @@ function displayNotes(notes) {
     console.debug(`[Notes] Updated notes: ${formattedNotes}`);
 }
 
-function startPlayback(video_filename, start, end, speed, notes) {
+function startPlayback(video_filename, start, end, speed, notes, step_counter) {
     console.info(`[Start Playback] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}`);
 
     // Update current video index
@@ -485,13 +486,9 @@ function startPlayback(video_filename, start, end, speed, notes) {
     setPlayerSpeed(speed);
     displayNotes(notes);
 
-    if (isLoopEnabled && end !== null) {
-        applyLooping(start, end, {
-            one_time: 136.7,                   // The time when the first "one" occurs in seconds
-            measure_count: 8,                  // Number of steps in one measure
-            measure_time: 3,                   // Duration of one measure in seconds      
-            visibleCounts: [1, 2, 3, 5, 6, 7]  // Display only these counts
-        });        
+    if (isLoopEnabled && end !== null && step_counter) {
+        console.debug('[Step Counter] Applying step counter:', step_counter);
+        applyLooping(start, end, step_counter);
     }
 
     seekToStart(start).then(() => {
@@ -562,7 +559,8 @@ export function playVideo({
     start,
     end,
     speed = 1,
-    notes = ''
+    notes = '',
+    step_counter = null
 }) {
     if (!video_filename) {
         console.warn('[Player: Play Video] No video filename provided. Displaying placeholder.');
@@ -587,7 +585,7 @@ export function playVideo({
         };
 
         player.once('loadedmetadata', () => {
-            startPlayback(video_filename, start, end, calculatedSpeed, notes);
+            startPlayback(video_filename, start, end, calculatedSpeed, notes, step_counter);
         });
 
         player.once('error', (error) => {

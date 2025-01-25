@@ -4,6 +4,8 @@ import requests
 import io
 import pandas as pd
 import mimetypes
+import json
+import re
 from flask import Flask, jsonify, send_from_directory, render_template, request, redirect, Response
 from datetime import datetime, timedelta
 from urllib.parse import unquote
@@ -24,7 +26,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Fixed columns to exclude from playlist processing
 fixed_columns = [
     'move_name', 'move_type', 'level', 'video_source', 'video_id', 'video_link', 
-    'video_filename', 'loop_start', 'loop_end', 'loop_speed', 'guide_start', 'notes'
+    'video_filename', 'loop_start', 'loop_end', 'loop_speed', 'step_counter', 'guide_start', 'notes'
 ]
 
 def generate_playlist_tags(move_row, playlist_columns):
@@ -111,6 +113,7 @@ def process_row(row):
         "loop_start": 0,
         "loop_end": 10,
         "loop_speed": 1,
+        "step_counter": None,
         "guide_start": 0,
         "notes": "No notes for this move.",
     }
@@ -161,6 +164,46 @@ def process_row(row):
         move_name=move_name,
         lower_bound=0
     )
+
+    # Parse and validate step_counter
+    step_counter = processed.get("step_counter", None)
+    if step_counter and isinstance(step_counter, str):
+        try:
+            logging.debug(f"[Step Counter] Raw step_counter BEFORE SPLIT: {step_counter}")
+
+            # Use regex to split into three components and keep the visibleCounts intact
+            match = re.match(r'^([^,]+),([^,]+),([^,]+),(.+)$', step_counter)
+            if not match:
+                raise ValueError(f"Invalid step_counter format: {step_counter}")
+
+            one_time = float(match.group(1).strip())  # First component: one_time
+            measure_count = int(match.group(2).strip())  # Second component: measure_count
+            measure_time = float(match.group(3).strip())  # Third component: measure_time
+            visible_counts_raw = match.group(4).strip()  # Fourth component: visibleCounts
+
+            logging.debug(f"[Step Counter] Parsed components - one_time: {one_time}, measure_count: {measure_count}, "
+                        f"measure_time: {measure_time}, visibleCounts: {visible_counts_raw}")
+
+            # Parse the visibleCounts array
+            if visible_counts_raw.startswith('[') and visible_counts_raw.endswith(']'):
+                visible_counts = [int(num.strip()) for num in visible_counts_raw[1:-1].split(',')]
+            else:
+                raise ValueError(f"Invalid visibleCounts format: {visible_counts_raw}")
+
+            # Assign parsed step_counter
+            processed["step_counter"] = {
+                "one_time": one_time,
+                "measure_count": measure_count,
+                "measure_time": measure_time,
+                "visibleCounts": visible_counts,
+            }
+        except (ValueError, TypeError) as e:
+            logging.error(f"[Step Counter] Invalid format for move '{move_name}': {step_counter}. Error: {e}")
+            processed["step_counter"] = None
+
+
+    else:
+        logging.warning(f"[Step Counter] No step_counter defined for move '{move_name}'.")
 
     return processed
 
