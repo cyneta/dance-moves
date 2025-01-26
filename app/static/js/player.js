@@ -476,12 +476,6 @@ function displayNotes(notes) {
 function startPlayback(video_filename, start, end, speed, notes, step_counter) {
     console.info(`[Start Playback] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}`);
 
-    // Update current video index
-    const moveIndex = allMoves.findIndex(move => move.video_filename === video_filename);
-    if (moveIndex !== -1) {
-        currentVideoIndex = moveIndex;
-    }
-
     updateCurrentMoveHighlight();
     setPlayerSpeed(speed);
     displayNotes(notes);
@@ -501,7 +495,7 @@ function startPlayback(video_filename, start, end, speed, notes, step_counter) {
 function updateCurrentMoveHighlight() {
     const moveTable = document.querySelector('#moves-table-container tbody');
     if (!moveTable) {
-        console.error('[Current Move] Moves table not found.');
+        console.error('[Move Highlighting] Moves table not found.');
         return;
     }
 
@@ -514,9 +508,11 @@ function updateCurrentMoveHighlight() {
     });
 
     if (currentVideoIndex === -1 || !allMoves[currentVideoIndex]) {
-        console.info('[Current Move] No move is currently playing.');
+        console.info('[Move Highlighting] No move is currently playing.');
         return;
     }
+
+    console.debug('[Move Highlighting] currentVideoIndex:', currentVideoIndex, 'allMoves[currentVideoIndex]:', allMoves[currentVideoIndex]);
 
     const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
     if (currentTableIndex !== -1) {
@@ -525,7 +521,7 @@ function updateCurrentMoveHighlight() {
             const moveNameCell = currentRow.cells[0];
             if (moveNameCell) {
                 moveNameCell.classList.add('current-move');
-                console.info(`[Current Move] Bolded move name for "${allMoves[currentVideoIndex].move_name}".`);
+                console.info(`[Move Highlighting] Bolded move name for "${allMoves[currentVideoIndex].move_name}".`);
             }
         }
     }
