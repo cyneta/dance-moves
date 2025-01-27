@@ -17,13 +17,13 @@ let isAutoplayEnabled = false;
 let currentVideoIndex = -1;         // Index of the currently playing video in allMoves
 let isLoopEnabled = false;
 
-export function setLoopEnabled(enabled) {
+export function setLoopEnabled(enabled, stepCounterParams) {
     isLoopEnabled = enabled;
     console.info(`[Player] Looping is now ${enabled ? 'enabled' : 'disabled'}.`);
 
-    if (!enabled) {
-        hideStepCounter();
-    }    
+    if (!enabled || !stepCounterParams) {
+        hideFrameAndStepCounters(); // Hide counters if looping is disabled or no params
+    }
 }
 
 export function getLoopEnabled() {
@@ -89,20 +89,52 @@ function updateFrameTimer(one_time = 0) {
     frameTimer.textContent = `${absoluteTime} / ${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
 }
 
+let lastStep = null; // Track the last displayed step to avoid multiple pauses
+
 function updateStepCounter({ one_time, measure_time, measure_count, visibleCounts }) {
     const stepCounter = document.getElementById('step-counter');
     if (!stepCounter || !player || !player.currentTime) return;
 
-    const elapsedTime = (player.currentTime - one_time + measure_time) % measure_time;
+    // Adjust elapsed time by shifting forward by 90ms
+    const elapsedTime = (player.currentTime - (one_time - .090) + measure_time) % measure_time;
     const step = Math.floor((elapsedTime / measure_time) * measure_count) + 1;
 
-    // Only display steps in visibleCounts
-    if (visibleCounts.includes(step)) {
+    // Only trigger on step transitions
+    if (step !== lastStep && visibleCounts.includes(step)) {
+        lastStep = step; // Update the last step
         stepCounter.textContent = step; // Display the step number
         stepCounter.style.display = 'block';
-    } else {
+
+        // Pause and resume playback for 1/10 of a second
+        if (!player.paused) {
+            player.pause();
+            setTimeout(() => {
+                player.play();
+            }, 300); // 300 milliseconds
+        }
+    } else if (!visibleCounts.includes(step)) {
         stepCounter.style.display = 'none'; // Hide for skipped counts
     }
+}
+
+function showFrameAndStepCounters() {
+    const frameTimer = document.getElementById('frame-timer');
+    const stepCounter = document.getElementById('step-counter');
+
+    if (frameTimer) frameTimer.style.display = 'block';
+    if (stepCounter) stepCounter.style.display = 'block';
+
+    console.debug('[Counters] Frame and step counters are now visible.');
+}
+
+function hideFrameAndStepCounters() {
+    const frameTimer = document.getElementById('frame-timer');
+    const stepCounter = document.getElementById('step-counter');
+
+    if (frameTimer) frameTimer.style.display = 'none';
+    if (stepCounter) stepCounter.style.display = 'none';
+
+    console.debug('[Counters] Frame and step counters are now hidden.');
 }
 
 // Apply looping with autoplay support
@@ -127,6 +159,7 @@ function applyLooping(start, end, stepCounterParams) {
             if (isAutoplayEnabled) {
                 console.info('[Autoplay] Moving to the next video.');
                 playNextVideo();
+                hideFrameAndStepCounters(); // Hide counters when autoplay starts
             } else {
                 console.info(`[Looping] Loop triggered. Looping back to start (${start}).`);
                 player.currentTime = start;
@@ -134,19 +167,24 @@ function applyLooping(start, end, stepCounterParams) {
             }
         }
 
-        // Update the frame timer
-        updateFrameTimer(stepCounterParams.one_time);
-
-        // Update the step counter
-        if (stepCounterParams) updateStepCounter(stepCounterParams);
+        // Update the frame timer and step counter only if stepCounterParams exist
+        if (stepCounterParams) {
+            updateFrameTimer(stepCounterParams.one_time);
+            updateStepCounter(stepCounterParams);
+        }
     };
 
     // Attach new loop handler
     media.addEventListener('timeupdate', loopHandler);
     media.loopHandler = loopHandler;
 
-    // Show the step counter during looping
-    showStepCounter();
+    // Show counters only if stepCounterParams exist
+    if (stepCounterParams) {
+        showFrameAndStepCounters();
+    } else {
+        hideFrameAndStepCounters(); // Ensure counters are hidden if params are undefined
+    }
+
     console.debug('[Looping] New loop listener added.');
 }
 

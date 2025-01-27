@@ -5,5 +5,4 @@ venv/
 __pycache__/
 videos/
 songs/
-app/static/js/player_head.js
 *_head.*
