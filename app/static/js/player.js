@@ -89,7 +89,26 @@ function updateFrameTimer(one_time = 0) {
     frameTimer.textContent = `${absoluteTime} / ${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
 }
 
-let lastStep = null; // Track the last displayed step to avoid multiple pauses
+let isStopMotionEnabled = false; // Global flag for stop-motion effect
+
+// Initialize Stop Motion Toggle
+export function initializeStopMotionToggle() {
+    const stopMotionToggle = document.getElementById('stop-motion-toggle');
+    if (!stopMotionToggle) {
+        console.error('[Stop Motion] Toggle switch not found in the DOM.');
+        return;
+    }
+
+    stopMotionToggle.addEventListener('change', (event) => {
+        isStopMotionEnabled = event.target.checked;
+        console.info(`[Stop Motion] Stop motion is now ${isStopMotionEnabled ? 'enabled' : 'disabled'}.`);
+    });
+
+    console.info('[Stop Motion] Toggle switch initialized.');
+}
+
+// Modify the updateStepCounter to respect the stop-motion effect
+let lastStep = null; // Track the last displayed step
 
 function updateStepCounter({ one_time, measure_time, measure_count, visibleCounts }) {
     const stepCounter = document.getElementById('step-counter');
@@ -105,8 +124,8 @@ function updateStepCounter({ one_time, measure_time, measure_count, visibleCount
         stepCounter.textContent = step; // Display the step number
         stepCounter.style.display = 'block';
 
-        // Pause and resume playback for 1/10 of a second
-        if (!player.paused) {
+        // Apply stop-motion effect if enabled
+        if (isStopMotionEnabled && !player.paused) {
             player.pause();
             setTimeout(() => {
                 player.play();
@@ -449,6 +468,9 @@ export function initializePlayerUI() {
         });
     }
 
+    // Initialize stop-motion toggle control
+    initializeStopMotionToggle();
+
     // Handle moveAction events
     on('moveAction', ({ moveIndex }) => {
         console.debug('[moveAction] Event triggered with parameters:', { moveIndex });
@@ -518,7 +540,7 @@ function startPlayback(video_filename, start, end, speed, notes, step_counter) {
     setPlayerSpeed(speed);
     displayNotes(notes);
 
-    if (isLoopEnabled && end !== null && step_counter) {
+    if (isLoopEnabled && end !== null) {
         console.debug('[Step Counter] Applying step counter:', step_counter);
         applyLooping(start, end, step_counter);
     }
