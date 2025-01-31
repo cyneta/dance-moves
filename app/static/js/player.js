@@ -106,6 +106,18 @@ export function initializeStopMotionToggle() {
     stopMotionToggle.addEventListener('change', (event) => {
         isStopMotionEnabled = event.target.checked;
         console.info(`[Stop Motion] Stop motion is now ${isStopMotionEnabled ? 'enabled' : 'disabled'}.`);
+
+        if (isStopMotionEnabled) {
+            console.info('[Stop Motion] Muting both video and alternate soundtrack.');
+            player.muted = true;
+            if (isAlternateSoundtrackEnabled) {
+                audioPlayer.muted = true;
+            }
+        } else {
+            console.info('[Stop Motion] Unmuting both video and alternate soundtrack.');
+            player.muted = isAlternateSoundtrackEnabled; // Keep muted if alternate soundtrack is enabled
+            audioPlayer.muted = false;
+        }
     });
 
     console.info('[Stop Motion] Toggle switch initialized.');
