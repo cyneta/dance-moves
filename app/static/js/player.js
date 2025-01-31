@@ -174,8 +174,13 @@ function updateStepCounter({ one_time, measure_time, measure_count, visibleCount
     const stepCounter = document.getElementById('step-counter');
     if (!stepCounter || !player || !player.currentTime) return;
 
-    // Adjust elapsed time by shifting forward by 90ms
-    const elapsedTime = (player.currentTime - (one_time - .090) + measure_time) % measure_time;
+    // Scale the step counter correction factor based on speed
+    const baseCorrection = 0.090; // Original correction factor at 1.0x speed
+    const speedFactor = player.speed || 1.0; // Prevent division by zero
+    const adjustedCorrection = baseCorrection / speedFactor; // Scale correction dynamically
+
+    // Apply scaled correction to elapsed time
+    const elapsedTime = (player.currentTime - (one_time - adjustedCorrection) + measure_time) % measure_time;
     const step = Math.floor((elapsedTime / measure_time) * measure_count) + 1;
 
     // Only trigger on step transitions
@@ -184,16 +189,23 @@ function updateStepCounter({ one_time, measure_time, measure_count, visibleCount
         stepCounter.textContent = step; // Display the step number
         stepCounter.style.display = 'block';
 
-        // Apply stop-motion effect if enabled
+        // Adjust Stop Motion Pause Based on Speed (from previous step)
         if (isStopMotionEnabled && !player.paused) {
+            const basePauseTime = 300; // Base pause duration in ms at normal speed
+            const adjustedPauseTime = basePauseTime / speedFactor; // Scale pause time
+
+            console.info(`[Stop Motion] Pausing for ${adjustedPauseTime.toFixed(0)} ms (Speed: ${speedFactor}x)`);
+
             player.pause();
             setTimeout(() => {
                 player.play();
-            }, 300); // 300 milliseconds
+            }, adjustedPauseTime);
         }
     } else if (!visibleCounts.includes(step)) {
         stepCounter.style.display = 'none'; // Hide for skipped counts
     }
+
+    console.debug(`[Step Counter] Speed: ${speedFactor}x | Correction: ${adjustedCorrection.toFixed(3)}s`);
 }
 
 function showFrameAndStepCounters() {
