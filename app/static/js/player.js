@@ -16,6 +16,10 @@ let isSpeedOverride = false;
 let isAutoplayEnabled = false;
 let currentVideoIndex = -1;         // Index of the currently playing video in allMoves
 let isLoopEnabled = false;
+let isAlternateSoundtrackEnabled = false;
+
+// Create an audio element for the alternate soundtrack
+let audioPlayer = new Audio();
 
 export function setLoopEnabled(enabled, stepCounterParams) {
     isLoopEnabled = enabled;
@@ -105,6 +109,50 @@ export function initializeStopMotionToggle() {
     });
 
     console.info('[Stop Motion] Toggle switch initialized.');
+}
+
+// Initialize Alternate Soundtrack Toggle
+export function initializeAlternateSoundtrackToggle() {
+    const altSoundtrackToggle = document.getElementById('alternate-soundtrack-switch');
+    if (!altSoundtrackToggle) {
+        console.error('[Alternate Soundtrack] Toggle switch not found in the DOM.');
+        return;
+    }
+
+    altSoundtrackToggle.addEventListener('change', (event) => {
+        isAlternateSoundtrackEnabled = event.target.checked;
+        console.info(`[Alternate Soundtrack] Toggle set to ${isAlternateSoundtrackEnabled ? 'enabled' : 'disabled'}.`);
+
+        const currentMove = allMoves[currentVideoIndex];
+        if (!currentMove) {
+            console.warn('[Alternate Soundtrack] No current move available.');
+            return;
+        }
+
+        const alt_soundtrack = currentMove.alt_soundtrack || "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3";
+
+        if (isAlternateSoundtrackEnabled) {
+            console.info(`[Alternate Soundtrack] Switching to "${alt_soundtrack}".`);
+            player.muted = true;
+            
+            if (audioPlayer.src !== `/static/songs/${alt_soundtrack}`) {
+                audioPlayer.src = `/static/songs/${alt_soundtrack}`;
+            }
+
+            audioPlayer.loop = true;
+            // audioPlayer.currentTime = ??
+            audioPlayer.play().catch(error => {
+                console.error('[Alternate Soundtrack] Audio playback failed:', error);
+            });
+
+        } else {
+            console.info('[Alternate Soundtrack] Disabling alternate soundtrack.');
+            player.muted = false;
+            audioPlayer.pause();
+        }
+    });
+
+    console.info('[Alternate Soundtrack] Toggle switch initialized.');
 }
 
 // Modify the updateStepCounter to respect the stop-motion effect
@@ -465,11 +513,26 @@ export function initializePlayerUI() {
             hideInstructions();
             player.media.focus(); // Ensure focus is set to the player
             console.debug('[Player UI] Instructions hidden and focus set to media.');
+            
+            // Resume Alternate Soundtrack when Video Plays
+            if (isAlternateSoundtrackEnabled && audioPlayer.paused) {
+                console.info('[Alternate Soundtrack] Resuming playback.');
+                audioPlayer.play();
+            }
+        });
+
+        player.on('pause', () => {
+            // Pause Alternate Soundtrack when Video Pauses
+            if (isAlternateSoundtrackEnabled && !audioPlayer.paused) {
+                console.info('[Alternate Soundtrack] Pausing playback.');
+                audioPlayer.pause();
+            }
         });
     }
 
     // Initialize stop-motion toggle control
     initializeStopMotionToggle();
+    initializeAlternateSoundtrackToggle();
 
     // Handle moveAction events
     on('moveAction', ({ moveIndex }) => {
@@ -533,8 +596,9 @@ function displayNotes(notes) {
     console.debug(`[Notes] Updated notes: ${formattedNotes}`);
 }
 
-function startPlayback(video_filename, start, end, speed, notes, step_counter) {
+function startPlayback(video_filename, start, end, speed, notes, step_counter, alt_soundtrack) {
     console.info(`[Start Playback] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}`);
+    console.debug(`[Alternate Soundtrack] Received filename: ${alt_soundtrack}`);
 
     updateCurrentMoveHighlight();
     setPlayerSpeed(speed);
@@ -547,6 +611,36 @@ function startPlayback(video_filename, start, end, speed, notes, step_counter) {
 
     seekToStart(start).then(() => {
         console.debug('[Start Playback] Seek completed');
+
+        // Alternate Soundtrack Logic (Only Runs if Enabled)
+        if (isAlternateSoundtrackEnabled && alt_soundtrack) {
+            console.info(`[Alternate Soundtrack] Playing "${alt_soundtrack}". Muting video.`);
+            player.muted = true;
+
+            if (audioPlayer.src !== `/static/songs/${alt_soundtrack}`) {
+                audioPlayer.src = `/static/songs/${alt_soundtrack}`;
+            }
+
+            console.debug(`[Alternate Soundtrack] Attempting to play: ${audioPlayer.src}`);
+
+            audioPlayer.loop = true;
+            audioPlayer.play().then(() => {
+                console.info(`[Alternate Soundtrack] Audio playback started.`);
+            }).catch(error => {
+                console.error('[Alternate Soundtrack] Audio playback failed:', error);
+            });
+
+            // Ensure alternate audio stops when the video ends
+            player.once('ended', () => {
+                console.debug('[Alternate Soundtrack] Video ended, stopping alternate soundtrack.');
+                audioPlayer.pause();
+            });
+
+        } else {
+            console.info('[Alternate Soundtrack] No alternate track, unmuting video.');
+            player.muted = false;
+            audioPlayer.pause();
+        }
     }).catch(error => {
         console.error('[Start Playback] Seek failed:', error);
     });
@@ -641,7 +735,15 @@ export function playVideo({
         };
 
         player.once('loadedmetadata', () => {
-            startPlayback(video_filename, start, end, calculatedSpeed, notes, step_counter);
+            startPlayback(
+                video_filename,
+                start,
+                end,
+                calculatedSpeed,
+                notes,
+                step_counter,
+                "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3"
+            );
         });
 
         player.once('error', (error) => {
