@@ -208,6 +208,18 @@ html, body {
     overflow: hidden; /* Prevent scrollbars */
 }
 
+/* Hide the video player initially */
+#player {
+    display: none;
+    visibility: hidden;
+}
+
+/* Show the player when Plyr is ready */
+.player-loaded #player {
+    display: block;
+    visibility: visible;
+}
+
 .instructions-overlay {
     position: absolute;
     top: 0;
@@ -308,5 +320,12 @@ html, body {
         margin: 0; /* Remove external margins */
         border: 1px solid #ccc; /* Fine border for visual separation */
         padding: 0.5rem; /* Uniform internal padding */
+    }
+}
+
+/* Hide instructions when the screen width is 390px or smaller */
+@media screen and (max-width: 480px) {
+    .instructions-overlay {
+        display: none !important; /* Ensure it overrides other styles */
     }
 }

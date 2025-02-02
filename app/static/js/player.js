@@ -527,6 +527,7 @@ export function initializePlayerUI() {
         return;
     }
 
+    // Destroy existing player instance if present
     if (player) player.destroy();
 
     player = new Plyr(videoElement, {
@@ -537,6 +538,12 @@ export function initializePlayerUI() {
 
     // Attach hideInstructions to player "play" event
     if (player) {
+
+        player.on('ready', () => {
+            console.debug('[Player UI] Player is fully loaded, making it visible.');
+            document.body.classList.add('player-loaded');
+        });
+
         player.on('play', () => {
             hideInstructions();
             player.media.focus(); // Ensure focus is set to the player
