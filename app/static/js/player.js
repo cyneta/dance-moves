@@ -95,30 +95,30 @@ function updateFrameTimer(one_time = 0) {
 
 let isStopMotionEnabled = false; // Global flag for stop-motion effect
 
-// Initialize Stop Motion Toggle
+// Initialize Freeze Frame Toggle
 export function initializeStopMotionToggle() {
     const stopMotionToggle = document.getElementById('stop-motion-toggle');
     if (!stopMotionToggle) {
-        console.error('[Stop Motion] Toggle switch not found in the DOM.');
+        console.error('[Freeze Frame] Toggle switch not found in the DOM.');
         return;
     }
 
     stopMotionToggle.addEventListener('change', (event) => {
         isStopMotionEnabled = event.target.checked;
-        console.info(`[Stop Motion] Stop motion is now ${isStopMotionEnabled ? 'enabled' : 'disabled'}.`);
+        console.info(`[Freeze Frame] Stop motion is now ${isStopMotionEnabled ? 'enabled' : 'disabled'}.`);
 
         if (isStopMotionEnabled) {
-            console.info('[Stop Motion] Muting video and alternate soundtrack.');
+            console.info('[Freeze Frame] Muting video and alternate soundtrack.');
             player.muted = true;
             audioPlayer.muted = true;
         } else {
-            console.info('[Stop Motion] Restoring audio settings.');
+            console.info('[Freeze Frame] Restoring audio settings.');
             player.muted = isAlternateSoundtrackEnabled;
             audioPlayer.muted = !isAlternateSoundtrackEnabled;
         }
     });
 
-    console.info('[Stop Motion] Toggle switch initialized.');
+    console.info('[Freeze Frame] Toggle switch initialized.');
 }
 
 // Initialize Alternate Soundtrack Toggle
@@ -189,12 +189,12 @@ function updateStepCounter({ one_time, measure_time, measure_count, visibleCount
         stepCounter.textContent = step; // Display the step number
         stepCounter.style.display = 'block';
 
-        // Adjust Stop Motion Pause Based on Speed (from previous step)
+        // Adjust Freeze Frame Pause Based on Speed (from previous step)
         if (isStopMotionEnabled && !player.paused) {
             const basePauseTime = 300; // Base pause duration in ms at normal speed
             const adjustedPauseTime = basePauseTime / playbackSpeed; // Scale pause time
 
-            console.info(`[Stop Motion] Pausing for ${adjustedPauseTime.toFixed(0)} ms (Speed: ${playbackSpeed}x)`);
+            console.info(`[Freeze Frame] Pausing for ${adjustedPauseTime.toFixed(0)} ms (Speed: ${playbackSpeed}x)`);
 
             // Hide controls for this brief pause, to prevent the distracting flicker
             player.elements.controls.hidden = true;
