@@ -108,15 +108,13 @@ export function initializeStopMotionToggle() {
         console.info(`[Stop Motion] Stop motion is now ${isStopMotionEnabled ? 'enabled' : 'disabled'}.`);
 
         if (isStopMotionEnabled) {
-            console.info('[Stop Motion] Muting both video and alternate soundtrack.');
+            console.info('[Stop Motion] Muting video and alternate soundtrack.');
             player.muted = true;
-            if (isAlternateSoundtrackEnabled) {
-                audioPlayer.muted = true;
-            }
+            audioPlayer.muted = true;
         } else {
-            console.info('[Stop Motion] Unmuting both video and alternate soundtrack.');
-            player.muted = isAlternateSoundtrackEnabled; // Keep muted if alternate soundtrack is enabled
-            audioPlayer.muted = false;
+            console.info('[Stop Motion] Restoring audio settings.');
+            player.muted = isAlternateSoundtrackEnabled;
+            audioPlayer.muted = !isAlternateSoundtrackEnabled;
         }
     });
 
@@ -198,9 +196,13 @@ function updateStepCounter({ one_time, measure_time, measure_count, visibleCount
 
             console.info(`[Stop Motion] Pausing for ${adjustedPauseTime.toFixed(0)} ms (Speed: ${playbackSpeed}x)`);
 
+            // Hide controls for this brief pause, to prevent the distracting flicker
+            player.elements.controls.hidden = true;
             player.pause();
+
             setTimeout(() => {
                 player.play();
+                player.elements.controls.hidden = false; // Unhide controls after pause
             }, adjustedPauseTime);
         }
     } else if (!visibleCounts.includes(step)) {
