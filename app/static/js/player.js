@@ -121,6 +121,15 @@ export function initializeStopMotionToggle() {
     console.info('[Freeze Frame] Toggle switch initialized.');
 }
 
+// 🟢 Define `altSoundtracksByType` at the global scope
+const altSoundtracksByType = {
+    "salsa": "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3",
+    "bachata": "Bachata Mix 2020 OSOCITY.mp3", 
+    "ecs": "Aretha Franklin - Good times.mp3",
+    "wcs": "West Coast Swing Classic.mp3",
+    "zouk": "Zouk Love - Ultimate Mix.mp3"
+};
+
 // Initialize Alternate Soundtrack Toggle
 export function initializeAlternateSoundtrackToggle() {
     const altSoundtrackToggle = document.getElementById('alternate-soundtrack-switch');
@@ -131,7 +140,7 @@ export function initializeAlternateSoundtrackToggle() {
 
     // Hardcoded mapping of dance types to MP3 files, for alternate audio tracks
     const altSoundtracksByType = {
-        "salsa": "Gilberto Santa Rosa - Conteo Regresivo.mp3",
+        "salsa": "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3",
         "bachata": "Bachata Mix 2020 OSOCITY.mp3", 
         "ecs": "Aretha Franklin - Good times.mp3",
         "wcs": "",
@@ -767,6 +776,10 @@ export function playVideo({
     const videoSrc = `/static/videos/${video_filename}`;
     console.debug(`[Player: Play Video] Resolving playback for "${video_filename}".`);
 
+    // Get correct alternate audio based on dance type
+    const danceType = document.body.dataset.danceType || "salsa"; // Default to Salsa
+    const alt_soundtrack = altSoundtracksByType[danceType];
+
     try {
         console.debug('[Player: Play Video] Updating player source');
         player.source = {
@@ -782,7 +795,7 @@ export function playVideo({
                 calculatedSpeed,
                 notes,
                 step_counter,
-                "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3"
+                alt_soundtrack
             );
         });
 

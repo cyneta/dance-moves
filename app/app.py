@@ -111,7 +111,7 @@ def process_row(row):
         "video_link": "",
         "video_filename": "",
         "loop_start": 0,
-        "loop_end": 10,
+        "loop_end": None,
         "loop_speed": 1,
         "step_counter": None,
         "guide_start": 0,
@@ -142,7 +142,7 @@ def process_row(row):
 
     processed["loop_end"] = get_valid_numeric_value(
         value=processed["loop_end"],
-        default=processed["loop_start"] + 10,
+        default=processed["loop_start"] + 20,
         field_name="loop_end",
         move_name=move_name,
         lower_bound=processed["loop_start"] + 3
