@@ -129,20 +129,25 @@ export function initializeAlternateSoundtrackToggle() {
         return;
     }
 
+    // Hardcoded mapping of dance types to MP3 files, for alternate audio tracks
+    const altSoundtracksByType = {
+        "salsa": "Gilberto Santa Rosa - Conteo Regresivo.mp3",
+        "bachata": "Bachata Mix 2020 OSOCITY.mp3", 
+        "ecs": "Aretha Franklin - Good times.mp3",
+        "wcs": "",
+        "zouk": ""
+    };
+
     altSoundtrackToggle.addEventListener('change', (event) => {
         isAlternateSoundtrackEnabled = event.target.checked;
         console.info(`[Alternate Soundtrack] Toggle set to ${isAlternateSoundtrackEnabled ? 'enabled' : 'disabled'}.`);
 
-        const currentMove = allMoves[currentVideoIndex];
-        if (!currentMove) {
-            console.warn('[Alternate Soundtrack] No current move available.');
-            return;
-        }
-
-        const alt_soundtrack = currentMove.alt_soundtrack || "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3";
+        // Get dance type
+        const danceType = document.body.dataset.danceType || "salsa"; // Default to Salsa
+        const alt_soundtrack = altSoundtracksByType[danceType];
 
         if (isAlternateSoundtrackEnabled) {
-            console.info(`[Alternate Soundtrack] Switching to "${alt_soundtrack}".`);
+            console.info(`[Alternate Soundtrack] Switching to "${alt_soundtrack}" for ${danceType}.`);
             player.muted = true;
             
             if (audioPlayer.src !== `/static/songs/${alt_soundtrack}`) {
