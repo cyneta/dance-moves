@@ -123,7 +123,7 @@ export function initializeStopMotionToggle() {
 
 // 🟢 Define `altSoundtracksByType` at the global scope
 const altSoundtracksByType = {
-    "salsa": "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3",
+    "salsa": "salsa_loop.mp3",
     "bachata": "Bachata Mix 2020 OSOCITY.mp3", 
     "ecs": "Aretha Franklin - Good times.mp3",
     "wcs": "West Coast Swing Classic.mp3",
@@ -137,15 +137,6 @@ export function initializeAlternateSoundtrackToggle() {
         console.error('[Alternate Soundtrack] Toggle switch not found in the DOM.');
         return;
     }
-
-    // Hardcoded mapping of dance types to MP3 files, for alternate audio tracks
-    const altSoundtracksByType = {
-        "salsa": "Gilberto Santa RosaConteo Regresivo (Salsa Version).mp3",
-        "bachata": "Bachata Mix 2020 OSOCITY.mp3", 
-        "ecs": "Aretha Franklin - Good times.mp3",
-        "wcs": "",
-        "zouk": ""
-    };
 
     altSoundtrackToggle.addEventListener('change', (event) => {
         isAlternateSoundtrackEnabled = event.target.checked;
