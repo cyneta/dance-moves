@@ -55,20 +55,26 @@ def fetch_sheet_data(sheet_url):
 
 def time_to_seconds(time_value):
     """
-    Converts time value (e.g., "mm:ss", integer seconds) to total seconds.
+    Converts time value (e.g., "mm:ss", integer seconds, or floats) to total seconds.
     Expects valid input; caller must handle missing or invalid values.
     """
     try:
-        # Handle "mm:ss" format
-        if isinstance(time_value, str) and ':' in time_value:
-            # Strip whitespace and split on ":"
-            time_value = time_value.strip()
-            minutes, seconds = map(int, time_value.split(':'))
-            return minutes * 60 + seconds
-        # Handle numeric values (e.g., 126 seconds)
-        return int(float(time_value))
+        if isinstance(time_value, str):
+            time_value = time_value.strip()  # Remove leading/trailing spaces
+            # Handle "mm:ss" format
+            if ':' in time_value:
+                minutes, seconds = map(float, time_value.split(':'))  # Allow decimals
+                total_seconds = minutes * 60 + seconds
+                return total_seconds
+            else:
+                # Handle cases where the spreadsheet may store as a stringified float
+                time_value = float(time_value)
+
+        # If it's already a number, ensure it's a float
+        result = float(time_value)
+        return result
+
     except (ValueError, TypeError) as e:
-        logging.error(f"Failed to convert time value '{time_value}': {e}")
         return None
 
 def get_valid_numeric_value(value, default, field_name, move_name, lower_bound=None, upper_bound=None):
