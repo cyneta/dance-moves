@@ -8,7 +8,7 @@ import { getCurrentTag } from './tagFilter.js';
 console.info('[Global] player.js loaded');
 
 const speeds = [
-    0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.57, 0.63, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.6, 1.8, 2.0
+    0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2.0
 ];
 
 let player;
@@ -81,16 +81,23 @@ function hideStepCounter() {
     if (stepCounter) stepCounter.style.display = 'none';
 }
 
-function updateFrameTimer(one_time = 0) {
+function updateFrameTimer(stepCounterParams, loopStart) {
     const frameTimer = document.getElementById('frame-timer');
     if (!frameTimer || !player || !player.currentTime) return;
 
+    // Determine the reference time:
+    // Use one_time from stepCounterParams (if available)
+    // If missing, fallback to loopStart
+    const referenceTime = stepCounterParams?.one_time ?? loopStart ?? 0;
+
     // Get absolute and relative times
     const absoluteTime = player.currentTime.toFixed(2);
-    const relativeTime = (player.currentTime - one_time).toFixed(2);
+    const relativeTime = (player.currentTime - referenceTime).toFixed(2);
 
-    // Update the frame timer
+    // Update the frame timer display
     frameTimer.textContent = `${absoluteTime} / ${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
+
+    console.debug(`[Frame Timer] Absolute: ${absoluteTime}, Relative (to reference=${referenceTime}): ${relativeTime}`);
 }
 
 let isStopMotionEnabled = false; // Global flag for stop-motion effect
@@ -269,7 +276,7 @@ function applyLooping(start, end, stepCounterParams) {
 
         // Update the frame timer and step counter only if stepCounterParams exist
         if (stepCounterParams) {
-            updateFrameTimer(stepCounterParams.one_time);
+            updateFrameTimer(stepCounterParams, start);
             updateStepCounter(stepCounterParams);
         }
     };
@@ -401,12 +408,14 @@ export function initializeSpeedSlider() {
         console.warn('[Player] Default speed (1.0) not found in speeds array.');
     }
 
+    // Enable override only when the user clicks or presses a key
+    slider.addEventListener('mousedown', () => isSpeedOverride = true);
+    slider.addEventListener('keydown', () => isSpeedOverride = true);
+
     // Set up event listener for slider interaction
     slider.addEventListener('input', (event) => {
         const sliderIndex = parseInt(event.target.value, 10);
         updateSpeedFromSlider(sliderIndex);
-        isSpeedOverride = true; // Mark override as active
-        console.info('[Player] Speed override activated via slider.');
     });
 
     console.info('[Player] Speed slider setup and initialization complete.');
@@ -645,8 +654,8 @@ function startPlayback(video_filename, start, end, speed, notes, step_counter, a
     displayNotes(notes);
 
     if (isLoopEnabled && end !== null) {
-        console.debug('[Step Counter] Applying step counter:', step_counter);
         applyLooping(start, end, step_counter);
+        updateFrameTimer(step_counter, start);
     }
 
     seekToStart(start).then(() => {
@@ -762,7 +771,13 @@ export function playVideo({
 
     const sliderElement = document.getElementById('speed-slider');
     const sliderValue = sliderElement ? parseInt(sliderElement.value, 10) : null;
-    const calculatedSpeed = isSpeedOverride && sliderValue !== null ? speeds[sliderValue] : speed;
+
+    // Use loop speed unless manually overridden by the user
+    const calculatedSpeed = (isSpeedOverride && sliderValue !== null) ? speeds[sliderValue] : speed;
+
+    console.debug(`[Player] isSpeedOverride: ${isSpeedOverride}, Slider Value: ${sliderValue}, Using Speed: ${calculatedSpeed}`);
+
+    setPlayerSpeed(calculatedSpeed);
 
     const videoSrc = `/static/videos/${video_filename}`;
     console.debug(`[Player: Play Video] Resolving playback for "${video_filename}".`);
