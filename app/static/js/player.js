@@ -97,7 +97,7 @@ function updateFrameTimer(stepCounterParams, loopStart) {
     // Update the frame timer display
     frameTimer.textContent = `${absoluteTime} / ${relativeTime >= 0 ? '+' : ''}${relativeTime}`;
 
-    console.debug(`[Frame Timer] Absolute: ${absoluteTime}, Relative (to reference=${referenceTime}): ${relativeTime}`);
+    // console.debug(`[Frame Timer] Absolute: ${absoluteTime}, Relative (to reference=${referenceTime}): ${relativeTime}`);
 }
 
 let isStopMotionEnabled = false; // Global flag for stop-motion effect
@@ -421,6 +421,53 @@ export function initializeSpeedSlider() {
     console.info('[Player] Speed slider setup and initialization complete.');
 }
 
+function jumpToPreviousMove() {
+    if (!moveTableIndices.length) return;
+    
+    const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
+    if (currentTableIndex === -1 || currentTableIndex === 0) {
+        console.warn("[Keyboard] Already at the first move.");
+        return;
+    }
+
+    const previousMoveIndex = moveTableIndices[currentTableIndex - 1];
+    playMoveByIndex(previousMoveIndex);
+}
+
+function jumpToNextMove() {
+    if (!moveTableIndices.length) return;
+    
+    const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
+    if (currentTableIndex === -1 || currentTableIndex >= moveTableIndices.length - 1) {
+        console.warn("[Keyboard] Already at the last move.");
+        return;
+    }
+
+    const nextMoveIndex = moveTableIndices[currentTableIndex + 1];
+    playMoveByIndex(nextMoveIndex);
+}
+
+function playMoveByIndex(moveIndex) {
+    const move = allMoves[moveIndex];
+    if (!move) {
+        console.error(`[Keyboard] No move found for index ${moveIndex}.`);
+        return;
+    }
+
+    console.info(`[Keyboard] Playing move: "${move.move_name}"`);
+
+    playVideo({
+        video_filename: move.video_filename,
+        start: move.loop_start,
+        end: move.loop_end,
+        speed: move.loop_speed,
+        notes: move.notes,
+        step_counter: move.step_counter
+    });
+
+    currentVideoIndex = moveIndex;
+}
+
 // Setup Keyboard Controls
 export function setupKeyboardControls() { 
     document.addEventListener('keydown', (event) => {
@@ -428,14 +475,14 @@ export function setupKeyboardControls() {
     
         const key = event.key;
         const shiftPressed = event.shiftKey;
-        const seekAmount = shiftPressed ? 5 : 1;
-    
-        console.debug('[Debug] Keydown event captured:', { key, shiftPressed });
-    
-        if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'm', 'f', 's', 'S'].includes(key)) {
+        const seekAmount = shiftPressed ? .5 : .01;
+
+        console.debug('[Keyboard] Keydown event captured:', { key, shiftPressed });
+
+        if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'm', 'f', 's', 'S', 'N', 'n'].includes(key)) {
             event.preventDefault();
         }
-    
+
         switch (key) {
             case ' ':
                 player.togglePlay();
@@ -471,6 +518,18 @@ export function setupKeyboardControls() {
                 break;
             case 'f':
                 player.fullscreen.toggle();
+                break;
+            case 'N':  // Shift + N for Previous Move
+                if (isLoopEnabled) {
+                    console.info("[Keyboard] Jumping to previous move.");
+                    jumpToPreviousMove();
+                }
+                break;
+            case 'n':  // N for Next Move
+                if (isLoopEnabled) {
+                    console.info("[Keyboard] Jumping to next move.");
+                    jumpToNextMove();
+                }
                 break;
         }
     });
@@ -591,38 +650,23 @@ export function initializePlayerUI() {
         const move = allMoves[moveIndex];
         if (!move) {
             console.error(`[Player] No move found for index ${moveIndex}.`);
-            console.debug('[Player] All available moves:', allMoves);
+            // console.debug('[Player] All available moves:', allMoves);
             return;
         }
     
         console.debug('[Player] Move data retrieved:', move);
     
-        // Destructure the move data
+        // Extract move properties
         const { video_filename, loop_start, loop_end, loop_speed, step_counter, guide_start, notes } = move;
     
         // Determine playback speed with override logic
         const speed = determinePlaybackSpeed(loop_speed);
         console.debug('[Player] Determined playback speed:', speed);
     
-        // Update the speed slider
-        const slider = document.getElementById('speed-slider');
-        if (!slider) {
-            console.error('[Player] Speed slider not found in the DOM.');
-            return;
-        }
-        const sliderIndex = speeds.indexOf(speed);
-    
-        if (sliderIndex === -1) {
-            console.error('[Player] Speed not found in predefined speeds:', speed);
-            console.debug('[Player] Predefined speeds:', speeds);
-            return;
-        }
-    
-        console.debug('[Player] Updating speed slider to index:', sliderIndex);
-        slider.value = sliderIndex;
-        slider.dispatchEvent(new Event('input'));
-    
-        // Update the global currentVideoIndex to track the current video
+        // Explicitly set player speed when move is selected
+        setPlayerSpeed(speed);
+
+        // Update the global index
         currentVideoIndex = moveIndex;
         console.debug(`[Player] Updated currentVideoIndex to ${currentVideoIndex}.`);
 
