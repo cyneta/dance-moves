@@ -18,6 +18,10 @@ let currentVideoIndex = -1;         // Index of the currently playing video in a
 let isLoopEnabled = false;
 let isAlternateSoundtrackEnabled = false;
 
+const REPEAT_COUNT = 3;
+let currentRepeat = 0;
+let hasBeenAnnounced = false;
+
 // Create an audio element for the alternate soundtrack
 let audioPlayer = new Audio();
 
@@ -264,9 +268,19 @@ function applyLooping(start, end, stepCounterParams) {
     const loopHandler = () => {
         if (player.currentTime >= end || player.ended) {
             if (isAutoplayEnabled) {
-                console.info('[Autoplay] Moving to the next video.');
-                playNextVideo();
-                hideFrameAndStepCounters(); // Hide counters when autoplay starts
+                // Check if we've repeated enough times
+                if (currentRepeat < REPEAT_COUNT - 1) {
+                    currentRepeat++; // Increment repeat count
+                    console.info(`[Looping] Repeating move (${currentRepeat + 1}/${REPEAT_COUNT})`);
+                    player.currentTime = start;
+                    player.play();
+                } else {
+                    console.info('[Autoplay] Moving to the next move.');
+                    currentRepeat = 0; // Reset repeat counter for the next move
+                    hasBeenAnnounced = false; // Reset announcement flag
+                    playNextVideo();
+                    hideFrameAndStepCounters();
+                }
             } else {
                 console.info(`[Looping] Loop triggered. Looping back to start (${start}).`);
                 player.currentTime = start;
@@ -321,21 +335,23 @@ function playNextVideo() {
         return;
     }
 
-    console.info(`[Autoplay] Playing next video: "${nextMove.move_name}"`);
+    console.info(`[Autoplay] Preparing move: "${nextMove.move_name}"`);
 
-    // Update currentVideoIndex to the next move index
-    currentVideoIndex = nextMoveIndex;
-    console.debug(`[Autoplay] Updated currentVideoIndex to ${currentVideoIndex}.`);
+    // Reset announcement when moving to a different move
+    if (nextMoveIndex !== currentVideoIndex) {
+        hasBeenAnnounced = false;
+    }
 
-    // Play the next video
-    console.info(`[Autoplay] Playing next video: "${nextMove.move_name}"`);
-    playVideo({
-        video_filename: nextMove.video_filename,
-        start: nextMove.loop_start,
-        end: nextMove.loop_end,
-        speed: nextMove.loop_speed,
-        notes: nextMove.notes
-    });
+    // Speak move name only if it hasn't been announced yet
+    if (isAutoplayEnabled && !hasBeenAnnounced) {
+        player.pause();
+        announceMove(nextMove.move_name, () => {
+            hasBeenAnnounced = true;  // Mark as announced immediately after speaking
+            playMoveByIndex(nextMoveIndex);
+        });
+    } else {
+        playMoveByIndex(nextMoveIndex);
+    }
 }
 
 export function setAutoplayEnabled(enabled) {
@@ -447,14 +463,56 @@ function jumpToNextMove() {
     playMoveByIndex(nextMoveIndex);
 }
 
-function playMoveByIndex(moveIndex) {
-    const move = allMoves[moveIndex];
-    if (!move) {
-        console.error(`[Keyboard] No move found for index ${moveIndex}.`);
+function announceMove(moveName, callback) {
+    if (!window.speechSynthesis) {
+        console.warn('[Announce Move] Speech Synthesis API not supported.');
+        callback(); // Fallback: Play move without announcement
         return;
     }
 
-    console.info(`[Keyboard] Playing move: "${move.move_name}"`);
+    const utterance = new SpeechSynthesisUtterance(moveName);
+    utterance.rate = 1.0;  // Normal speed
+    utterance.volume = 1.0; // Full volume
+    utterance.lang = 'en-US';
+
+    console.info(`[Announce Move] Announcing move: "${moveName}"`);
+
+    // Pause video before announcing
+    const wasPlaying = !player.paused;
+    player.pause();
+
+    // Double-check if pause actually took effect (force sync)
+    setTimeout(() => {
+        if (!player.paused) {
+            console.warn("[Announce Move] Player did not pause immediately, forcing pause.");
+            player.pause(); // Enforce pause
+        }
+    }, 50); // Small delay to ensure pause applies
+
+    utterance.onend = () => {
+        console.info('[Announce Move] Move announcement complete.');
+        hasBeenAnnounced = true;
+
+        // Resume playback only if autoplay is enabled and video was originally playing
+        if (isAutoplayEnabled && wasPlaying) {
+            console.info("[Announce Move] Resuming video playback after announcement.");
+            player.play();
+        }
+
+        callback();
+    };
+
+    speechSynthesis.speak(utterance);
+}
+
+function playMoveByIndex(moveIndex) {
+    const move = allMoves[moveIndex];
+    if (!move) {
+        console.error(`[Play Move By Index] No move found for index ${moveIndex}.`);
+        return;
+    }
+
+    console.info(`[Play Move By Index] Playing move: "${move.move_name}"`);
 
     playVideo({
         video_filename: move.video_filename,
