@@ -25,6 +25,24 @@ let hasBeenAnnounced = false;
 // Create an audio element for the alternate soundtrack
 let audioPlayer = new Audio();
 
+function getVideoElement() {
+    return document.querySelector(".plyr__video-wrapper video");
+}
+
+function showPlayer() {
+    const videoElement = getVideoElement();
+    if (videoElement) {
+        videoElement.style.display = 'block';
+    }
+}
+
+function hidePlayer() {
+    const videoElement = getVideoElement();
+    if (videoElement) {
+        videoElement.style.display = 'none';
+    }
+}
+
 export function setLoopEnabled(enabled, stepCounterParams) {
     isLoopEnabled = enabled;
     console.info(`[Player] Looping is now ${enabled ? 'enabled' : 'disabled'}.`);
@@ -266,6 +284,8 @@ function applyLooping(start, end, stepCounterParams) {
     }
 
     const loopHandler = () => {
+        // console.debug(`[Looping] Current Time: ${player.currentTime}, End: ${end}`);
+        
         if (player.currentTime >= end || player.ended) {
             if (isAutoplayEnabled) {
                 // Check if we've repeated enough times
@@ -282,13 +302,13 @@ function applyLooping(start, end, stepCounterParams) {
                     hideFrameAndStepCounters();
                 }
             } else {
-                console.info(`[Looping] Loop triggered. Looping back to start (${start}).`);
+                console.info(`[Looping] Loop triggered. Restarting at ${start}`);
                 player.currentTime = start;
                 player.play();
             }
         }
 
-        // Update the frame timer and step counter only if stepCounterParams exist
+        // Update the frame timer and step counter if available
         if (stepCounterParams) {
             updateFrameTimer(stepCounterParams, start);
             updateStepCounter(stepCounterParams);
@@ -303,7 +323,7 @@ function applyLooping(start, end, stepCounterParams) {
     if (stepCounterParams) {
         showFrameAndStepCounters();
     } else {
-        hideFrameAndStepCounters(); // Ensure counters are hidden if params are undefined
+        hideFrameAndStepCounters();
     }
 
     console.debug('[Looping] New loop listener added.');
@@ -311,6 +331,8 @@ function applyLooping(start, end, stepCounterParams) {
 
 // Play the next video in the sequence
 function playNextVideo() {
+    console.info("[Autoplay] Attempting to play the next move.");
+
     if (!moveTableIndices.length) {
         console.error('[Autoplay] No moves available in the table.');
         return;
@@ -323,10 +345,13 @@ function playNextVideo() {
         return;
     }
 
-    // Calculate the next table index (wrap around with modulo)
-    const nextTableIndex = (currentTableIndex + 1) % moveTableIndices.length;
+    // Reset repeat count before transitioning to the next move
+    console.info("[Autoplay] Reset repeat count and announcement flag.");
+    currentRepeat = 0;
+    hasBeenAnnounced = false;
 
-    // Get the next move index from moveTableIndices
+    // Determine the next move index (wrap around if necessary)
+    const nextTableIndex = (currentTableIndex + 1) % moveTableIndices.length;
     const nextMoveIndex = moveTableIndices[nextTableIndex];
     const nextMove = allMoves[nextMoveIndex];
 
@@ -337,21 +362,23 @@ function playNextVideo() {
 
     console.info(`[Autoplay] Preparing move: "${nextMove.move_name}"`);
 
-    // Reset announcement when moving to a different move
-    if (nextMoveIndex !== currentVideoIndex) {
-        hasBeenAnnounced = false;
-    }
+    // Display move name overlay and pause player for smooth transition
+    displayMoveNameOverlay(nextMove.move_name);
+    player.pause();
 
-    // Speak move name only if it hasn't been announced yet
-    if (isAutoplayEnabled && !hasBeenAnnounced) {
-        player.pause();
-        announceMove(nextMove.move_name, () => {
-            hasBeenAnnounced = true;  // Mark as announced immediately after speaking
-            playMoveByIndex(nextMoveIndex);
-        });
-    } else {
+    // Announce move, then play the next move
+    announceMove(nextMove.move_name, () => {
+        console.info("[Autoplay] Announcement complete. Proceeding to next move.");
+        hideMoveNameOverlay();
+
+        if (!isAutoplayEnabled) {
+            console.warn("[Autoplay] Autoplay was disabled during announcement. Aborting.");
+            return;
+        }
+
+        console.info(`[Autoplay] Playing next move: "${nextMove.move_name}"`);
         playMoveByIndex(nextMoveIndex);
-    }
+    });
 }
 
 export function setAutoplayEnabled(enabled) {
@@ -437,6 +464,23 @@ export function initializeSpeedSlider() {
     console.info('[Player] Speed slider setup and initialization complete.');
 }
 
+function displayMoveNameOverlay(moveName) {
+    const overlay = document.getElementById('move-name-overlay');
+    if (!overlay) {
+        console.error("[UI] Move name overlay element not found.");
+        return;
+    }
+
+    overlay.textContent = moveName;
+    overlay.style.display = 'block';
+}
+
+function hideMoveNameOverlay() {
+    const overlay = document.getElementById('move-name-overlay');
+    if (!overlay) return;
+    overlay.style.display = 'none';
+}
+
 function jumpToPreviousMove() {
     if (!moveTableIndices.length) return;
     
@@ -447,7 +491,18 @@ function jumpToPreviousMove() {
     }
 
     const previousMoveIndex = moveTableIndices[currentTableIndex - 1];
-    playMoveByIndex(previousMoveIndex);
+    const previousMove = allMoves[previousMoveIndex];
+
+    console.info(`[Keyboard] Jumping to previous move: "${previousMove.move_name}"`);
+
+    // Pause player and display move name before seeking
+    player.pause();
+    displayMoveNameOverlay(previousMove.move_name);
+
+    announceMove(previousMove.move_name, () => {
+        hideMoveNameOverlay();
+        playMoveByIndex(previousMoveIndex);
+    });
 }
 
 function jumpToNextMove() {
@@ -460,48 +515,65 @@ function jumpToNextMove() {
     }
 
     const nextMoveIndex = moveTableIndices[currentTableIndex + 1];
-    playMoveByIndex(nextMoveIndex);
+    const nextMove = allMoves[nextMoveIndex];
+
+    console.info(`[Keyboard] Jumping to next move: "${nextMove.move_name}"`);
+
+    // Pause player and display move name before seeking
+    player.pause();
+    displayMoveNameOverlay(nextMove.move_name);
+
+    announceMove(nextMove.move_name, () => {
+        hideMoveNameOverlay();
+        playMoveByIndex(nextMoveIndex);
+    });
 }
 
 function announceMove(moveName, callback) {
     if (!window.speechSynthesis) {
         console.warn('[Announce Move] Speech Synthesis API not supported.');
-        callback(); // Fallback: Play move without announcement
+        callback(); // Ensure callback is called if speech isn't supported
         return;
     }
+
+    console.info(`[Announce Move] Announcing move: "${moveName}"`);
 
     const utterance = new SpeechSynthesisUtterance(moveName);
     utterance.rate = 1.0;  // Normal speed
     utterance.volume = 1.0; // Full volume
     utterance.lang = 'en-US';
-
-    console.info(`[Announce Move] Announcing move: "${moveName}"`);
+    console.debug(`[Announce Move] Created utterance for: "${moveName}"`);
 
     // Pause video before announcing
     const wasPlaying = !player.paused;
     player.pause();
-
-    // Double-check if pause actually took effect (force sync)
-    setTimeout(() => {
-        if (!player.paused) {
-            console.warn("[Announce Move] Player did not pause immediately, forcing pause.");
-            player.pause(); // Enforce pause
-        }
-    }, 50); // Small delay to ensure pause applies
+    hidePlayer();
+    displayMoveNameOverlay(moveName); // Show move name overlay
 
     utterance.onend = () => {
         console.info('[Announce Move] Move announcement complete.');
+
+        // Ensure hasBeenAnnounced is only set after the announcement
         hasBeenAnnounced = true;
+        currentRepeat = 0; // Reset repeat count when moving to a new move
+
+        // Restore player visibility
+        showPlayer();
+        hideMoveNameOverlay();
+
+        // Ensure autoplay moves forward
+        console.info(`[Announce Move] Calling callback() to continue autoplay`);
+        callback(); // Proceed to next move
 
         // Resume playback only if autoplay is enabled and video was originally playing
         if (isAutoplayEnabled && wasPlaying) {
             console.info("[Announce Move] Resuming video playback after announcement.");
             player.play();
         }
-
-        callback();
     };
 
+    console.info("[Announce Move] Speaking now...");
+    console.info(`[Announce Move] SpeechSynthesis.paused: ${speechSynthesis.paused}`);
     speechSynthesis.speak(utterance);
 }
 
@@ -533,7 +605,7 @@ export function setupKeyboardControls() {
     
         const key = event.key;
         const shiftPressed = event.shiftKey;
-        const seekAmount = shiftPressed ? .5 : .01;
+        const seekAmount = shiftPressed ? .5 : .034;
 
         console.debug('[Keyboard] Keydown event captured:', { key, shiftPressed });
 
@@ -909,13 +981,13 @@ export function playVideo({
 
         player.once('error', (error) => {
             console.error('[Player: Play Video] Error loading video:', error);
-            document.getElementById('player').style.display = 'none';
+            hidePlayer();
             document.getElementById('player-placeholder').style.display = 'block';
             displayNotes("Failed to load video.");
         });
     } catch (error) {
         console.error('[Player: Play Video] Unexpected error:', error);
-        document.getElementById('player').style.display = 'none';
+        hidePlayer();
         document.getElementById('player-placeholder').style.display = 'block';
         displayNotes("Unexpected error occurred while loading video.");
     }

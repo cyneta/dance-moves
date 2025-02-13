@@ -272,6 +272,22 @@ html, body {
     text-align: right;
 }
 
+#move-name-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-align: center;
+    display: none;
+    z-index: 100;
+}
+
 /* Adjust Panels for iPhone Landscape */
 @media (max-width: 932px) and (orientation: landscape) {
     #left-panel {
