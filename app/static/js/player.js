@@ -529,26 +529,50 @@ function jumpToNextMove() {
     });
 }
 
+function sanitizeMoveName(moveName) {
+    if (!moveName) return "";
+
+    return moveName
+        .replace(/^\./, "") // Remove leading periods
+        .replace(/\bCBL\b/g, "Cross Body Lead") // Expand CBL
+        .replace(/\bLL\b/g, "") // Remove LL
+        .replace(/\bRR\b/g, "") // Remove RR
+        .replace(/\bLR\b/g, "") // Remove LR
+        .replace(/\bRL\b/g, "") // Remove RL
+        .replace(/&/g, "and") // Expand '&' to 'and'
+        .trim(); // Remove any trailing spaces after modifications
+}
+
 function announceMove(moveName, callback) {
     if (!window.speechSynthesis) {
         console.warn('[Announce Move] Speech Synthesis API not supported.');
-        callback(); // Ensure callback is called if speech isn't supported
+        callback(); // Fallback: Play move without announcement
         return;
     }
 
     console.info(`[Announce Move] Announcing move: "${moveName}"`);
+    
+    const sanitizedMoveName = sanitizeMoveName(moveName);
+    if (!sanitizedMoveName) {
+        console.warn('[Speech] Move name is empty after sanitization, skipping announcement.');
+        callback();
+        return;
+    }
 
-    const utterance = new SpeechSynthesisUtterance(moveName);
-    utterance.rate = 1.0;  // Normal speed
-    utterance.volume = 1.0; // Full volume
+    const utterance = new SpeechSynthesisUtterance(sanitizedMoveName);
+    utterance.rate = 1.5;
+    utterance.volume = 1.0;
+    utterance.pitch = 2.0;
+    utterance.voice = speechSynthesis.getVoices().find(voice => voice.lang === 'en-US');
     utterance.lang = 'en-US';
-    console.debug(`[Announce Move] Created utterance for: "${moveName}"`);
+
+    console.info(`[Speech] Announcing move: "${sanitizedMoveName}"`);
 
     // Pause video before announcing
     const wasPlaying = !player.paused;
     player.pause();
     hidePlayer();
-    displayMoveNameOverlay(moveName); // Show move name overlay
+    displayMoveNameOverlay(sanitizedMoveName); // Show move name overlay
 
     utterance.onend = () => {
         console.info('[Announce Move] Move announcement complete.');
@@ -573,7 +597,6 @@ function announceMove(moveName, callback) {
     };
 
     console.info("[Announce Move] Speaking now...");
-    console.info(`[Announce Move] SpeechSynthesis.paused: ${speechSynthesis.paused}`);
     speechSynthesis.speak(utterance);
 }
 
