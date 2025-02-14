@@ -262,7 +262,7 @@ html, body {
     bottom: 10px;
     right: 10px;
     color: #add8e6;
-    font-size: 20vh;
+    font-size: clamp(5vh, 12vw, 15vh) !important;
     z-index: 1000;
     background-color: transparent;
     padding: 0;
@@ -294,22 +294,18 @@ html, body {
         width: 42%;
     }
 
-    #right-panel {
-        width: 58%; /* Take remaining space */
-    }
-
     /* Hide 3rd column in moves table */
     #moves-table-container table td:nth-child(3) {
         display: none;
+    }
+
+    #right-panel {
+        width: 58%; /* Take remaining space */
     }
 }
 
 /* Portrait Mode Adjustments */
 @media (orientation: portrait) {
-    #right-panel {
-        display: none; /* Hide right panel in portrait */
-    }
-
     #left-panel {
         width: 100%; /* Full width */
         overflow-y: auto; /* Scrollable vertically */
@@ -322,13 +318,6 @@ html, body {
         margin-bottom: 0.5rem; /* Add space below the moves table */
     }
 
-    /* Video Player: Add bottom margin for spacing */
-    #player-wrapper {
-        width: 100%; /* Full width */
-        aspect-ratio: 16 / 9;
-        margin: 0 auto 0.5rem; /* Center horizontally and add 0.5rem bottom margin */
-    }
-
     /* Notes Section */
     .card {
         flex: 1; /* Take up remaining space */
@@ -337,11 +326,15 @@ html, body {
         border: 1px solid #ccc; /* Fine border for visual separation */
         padding: 0.5rem; /* Uniform internal padding */
     }
-}
 
-/* Hide instructions when the screen width is 390px or smaller */
-@media screen and (max-width: 480px) {
-    .instructions-overlay {
-        display: none !important; /* Ensure it overrides other styles */
+    #right-panel {
+        display: none; /* Hide right panel in portrait */
+    }
+
+    /* Video Player: Add bottom margin for spacing */
+    #player-wrapper {
+        width: 100%; /* Full width */
+        aspect-ratio: 16 / 9;
+        margin: 0 auto 0.5rem; /* Center horizontally and add 0.5rem bottom margin */
     }
 }

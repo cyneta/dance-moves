@@ -535,10 +535,10 @@ function sanitizeMoveName(moveName) {
     return moveName
         .replace(/^\./, "") // Remove leading periods
         .replace(/\bCBL\b/g, "Cross Body Lead") // Expand CBL
-        .replace(/\bLL\b/g, "") // Remove LL
-        .replace(/\bRR\b/g, "") // Remove RR
-        .replace(/\bLR\b/g, "") // Remove LR
-        .replace(/\bRL\b/g, "") // Remove RL
+        .replace(/LL/g, "") // Remove LL
+        .replace(/RR/g, "") // Remove RR
+        .replace(/LR/g, "") // Remove LR
+        .replace(/RL/g, "") // Remove RL
         .replace(/&/g, "and") // Expand '&' to 'and'
         .trim(); // Remove any trailing spaces after modifications
 }
