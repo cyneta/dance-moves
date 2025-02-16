@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="d-flex flex-column" data-dance-type="{{ dance_type }}">
+<body class="d-flex flex-column" tabindex="0" data-dance-type="{{ dance_type }}">
     <div class="container-fluid">
         <div class="row">
             <!-- Left Panel -->
@@ -95,6 +95,12 @@
                     <div class="card-body overflow-auto" style="max-height: 250px;">
                         <p id="notes-content">Select a move to see the notes here.</p>
                     </div>
+                </div>
+
+                <!-- Debug Log -->
+                <div id="debug-log" style="position: fixed; bottom: 10px; left: 10px; width: 90%; max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.7); color: white; font-size: 14px; padding: 10px; z-index: 9999;">
+                    <strong>Debug Log:</strong>
+                    <div id="debug-messages"></div>
                 </div>
             </div>
 

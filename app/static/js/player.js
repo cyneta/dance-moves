@@ -560,9 +560,9 @@ function announceMove(moveName, callback) {
     }
 
     const utterance = new SpeechSynthesisUtterance(sanitizedMoveName);
-    utterance.rate = 1.5;
+    utterance.rate = 1.0;
     utterance.volume = 1.0;
-    utterance.pitch = 2.0;
+    utterance.pitch = 1.0;
     utterance.voice = speechSynthesis.getVoices().find(voice => voice.lang === 'en-US');
     utterance.lang = 'en-US';
 
@@ -623,7 +623,7 @@ function playMoveByIndex(moveIndex) {
 
 // Setup Keyboard Controls
 export function setupKeyboardControls() { 
-    document.addEventListener('keydown', (event) => {
+    window.addEventListener('keydown', (event) => {
         if (!player) return;
     
         const key = event.key;
@@ -772,8 +772,7 @@ export function initializePlayerUI() {
 
         player.on('play', () => {
             hideInstructions();
-            player.media.focus(); // Ensure focus is set to the player
-            console.debug('[Player UI] Instructions hidden and focus set to media.');
+            console.debug('[Player UI] Instructions hidden.');
             
             // Resume Alternate Soundtrack when Video Plays
             if (isAlternateSoundtrackEnabled && audioPlayer.paused) {
@@ -1075,4 +1074,18 @@ export function initializeOrientationHandling() {
     handleOrientationChange(); // Initial placement
     window.addEventListener('resize', handleOrientationChange); // Adjust on window resize
     console.info('[Orientation Change] Orientation handling initialized.');
+}
+
+function logDebugMessage(message) {
+    const debugContainer = document.getElementById("debug-messages");
+    if (!debugContainer) return;
+
+    const newMessage = document.createElement("div");
+    newMessage.textContent = message;
+    debugContainer.appendChild(newMessage);
+
+    // Scroll to the bottom so latest messages are visible
+    debugContainer.parentElement.scrollTop = debugContainer.parentElement.scrollHeight;
+
+    console.debug(message); // Still log to console if available
 }
