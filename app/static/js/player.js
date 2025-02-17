@@ -179,8 +179,8 @@ export function initializeAlternateSoundtrackToggle() {
             console.info(`[Alternate Soundtrack] Switching to "${alt_soundtrack}" for ${danceType}.`);
             player.muted = true;
             
-            if (audioPlayer.src !== `/static/songs/${alt_soundtrack}`) {
-                audioPlayer.src = `/static/songs/${alt_soundtrack}`;
+            if (audioPlayer.src !== `/static/videos/${alt_soundtrack}`) {
+                audioPlayer.src = `/static/videos/${alt_soundtrack}`;
             }
 
             audioPlayer.loop = true;
@@ -862,8 +862,8 @@ function startPlayback(video_filename, start, end, speed, notes, step_counter, a
             console.info(`[Alternate Soundtrack] Playing "${alt_soundtrack}". Muting video.`);
             player.muted = true;
 
-            if (audioPlayer.src !== `/static/songs/${alt_soundtrack}`) {
-                audioPlayer.src = `/static/songs/${alt_soundtrack}`;
+            if (audioPlayer.src !== `/static/videos/${alt_soundtrack}`) {
+                audioPlayer.src = `/static/videos/${alt_soundtrack}`;
             }
 
             console.debug(`[Alternate Soundtrack] Attempting to play: ${audioPlayer.src}`);
