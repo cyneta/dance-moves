@@ -563,7 +563,6 @@ function announceMove(moveName, callback) {
     utterance.rate = 1.0;
     utterance.volume = 1.0;
     utterance.pitch = 1.0;
-    utterance.voice = speechSynthesis.getVoices().find(voice => voice.lang === 'en-US');
     utterance.lang = 'en-US';
 
     console.info(`[Speech] Announcing move: "${sanitizedMoveName}"`);
