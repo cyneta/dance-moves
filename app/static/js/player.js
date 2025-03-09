@@ -25,24 +25,6 @@ let hasBeenAnnounced = false;
 // Create an audio element for the alternate soundtrack
 let audioPlayer = new Audio();
 
-function getVideoElement() {
-    return document.querySelector(".plyr__video-wrapper video");
-}
-
-function showPlayer() {
-    const videoElement = getVideoElement();
-    if (videoElement) {
-        videoElement.style.display = 'block';
-    }
-}
-
-function hidePlayer() {
-    const videoElement = getVideoElement();
-    if (videoElement) {
-        videoElement.style.display = 'none';
-    }
-}
-
 export function setLoopEnabled(enabled, stepCounterParams) {
     isLoopEnabled = enabled;
     console.info(`[Player] Looping is now ${enabled ? 'enabled' : 'disabled'}.`);
@@ -338,19 +320,12 @@ function playNextVideo() {
         return;
     }
 
-    // Find the current table index (position within moveTableIndices)
     const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
     if (currentTableIndex === -1) {
         console.error(`[Autoplay] Current video index is not in the table: ${currentVideoIndex}.`);
         return;
     }
 
-    // Reset repeat count before transitioning to the next move
-    console.info("[Autoplay] Reset repeat count and announcement flag.");
-    currentRepeat = 0;
-    hasBeenAnnounced = false;
-
-    // Determine the next move index (wrap around if necessary)
     const nextTableIndex = (currentTableIndex + 1) % moveTableIndices.length;
     const nextMoveIndex = moveTableIndices[nextTableIndex];
     const nextMove = allMoves[nextMoveIndex];
@@ -360,23 +335,18 @@ function playNextVideo() {
         return;
     }
 
-    console.info(`[Autoplay] Preparing move: "${nextMove.move_name}"`);
+    console.info(`[Autoplay] Playing next move: "${nextMove.move_name}"`);
 
-    // Display move name overlay and pause player for smooth transition
-    displayMoveNameOverlay(nextMove.move_name);
-    player.pause();
+    // Remove existing loop handler to prevent unintended repeats
+    if (player?.media?.loopHandler) {
+        player.media.removeEventListener('timeupdate', player.media.loopHandler);
+        player.media.loopHandler = null;
+        console.info("[Autoplay] Cleared existing loop listener.");
+    }
 
-    // Announce move, then play the next move
-    announceMove(nextMove.move_name, () => {
-        console.info("[Autoplay] Announcement complete. Proceeding to next move.");
-        hideMoveNameOverlay();
-
-        if (!isAutoplayEnabled) {
-            console.warn("[Autoplay] Autoplay was disabled during announcement. Aborting.");
-            return;
-        }
-
-        console.info(`[Autoplay] Playing next move: "${nextMove.move_name}"`);
+    // Announce the move, then play the next move only after the announcement finishes
+    announceMove(nextMove.move_name).then(() => {
+        console.info("[Autoplay] Move announcement finished, now playing video.");
         playMoveByIndex(nextMoveIndex);
     });
 }
@@ -464,23 +434,6 @@ export function initializeSpeedSlider() {
     console.info('[Player] Speed slider setup and initialization complete.');
 }
 
-function displayMoveNameOverlay(moveName) {
-    const overlay = document.getElementById('move-name-overlay');
-    if (!overlay) {
-        console.error("[UI] Move name overlay element not found.");
-        return;
-    }
-
-    overlay.textContent = moveName;
-    overlay.style.display = 'block';
-}
-
-function hideMoveNameOverlay() {
-    const overlay = document.getElementById('move-name-overlay');
-    if (!overlay) return;
-    overlay.style.display = 'none';
-}
-
 function jumpToPreviousMove() {
     if (!moveTableIndices.length) return;
     
@@ -498,11 +451,6 @@ function jumpToPreviousMove() {
     // Pause player and display move name before seeking
     player.pause();
     displayMoveNameOverlay(previousMove.move_name);
-
-    announceMove(previousMove.move_name, () => {
-        hideMoveNameOverlay();
-        playMoveByIndex(previousMoveIndex);
-    });
 }
 
 function jumpToNextMove() {
@@ -522,11 +470,6 @@ function jumpToNextMove() {
     // Pause player and display move name before seeking
     player.pause();
     displayMoveNameOverlay(nextMove.move_name);
-
-    announceMove(nextMove.move_name, () => {
-        hideMoveNameOverlay();
-        playMoveByIndex(nextMoveIndex);
-    });
 }
 
 function sanitizeMoveName(moveName) {
@@ -543,61 +486,97 @@ function sanitizeMoveName(moveName) {
         .trim(); // Remove any trailing spaces after modifications
 }
 
-function announceMove(moveName, callback) {
-    if (!window.speechSynthesis) {
-        console.warn('[Announce Move] Speech Synthesis API not supported.');
-        callback(); // Fallback: Play move without announcement
-        return;
-    }
-
-    console.info(`[Announce Move] Announcing move: "${moveName}"`);
-    
-    const sanitizedMoveName = sanitizeMoveName(moveName);
-    if (!sanitizedMoveName) {
-        console.warn('[Speech] Move name is empty after sanitization, skipping announcement.');
-        callback();
-        return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(sanitizedMoveName);
-    utterance.rate = 1.0;
-    utterance.volume = 1.0;
-    utterance.pitch = 1.0;
-    utterance.lang = 'en-US';
-
-    console.info(`[Speech] Announcing move: "${sanitizedMoveName}"`);
-
-    // Pause video before announcing
-    const wasPlaying = !player.paused;
-    player.pause();
-    hidePlayer();
-    displayMoveNameOverlay(sanitizedMoveName); // Show move name overlay
-
-    utterance.onend = () => {
-        console.info('[Announce Move] Move announcement complete.');
-
-        // Ensure hasBeenAnnounced is only set after the announcement
-        hasBeenAnnounced = true;
-        currentRepeat = 0; // Reset repeat count when moving to a new move
-
-        // Restore player visibility
-        showPlayer();
-        hideMoveNameOverlay();
-
-        // Ensure autoplay moves forward
-        console.info(`[Announce Move] Calling callback() to continue autoplay`);
-        callback(); // Proceed to next move
-
-        // Resume playback only if autoplay is enabled and video was originally playing
-        if (isAutoplayEnabled && wasPlaying) {
-            console.info("[Announce Move] Resuming video playback after announcement.");
-            player.play();
-        }
-    };
-
-    console.info("[Announce Move] Speaking now...");
-    speechSynthesis.speak(utterance);
+function getVideoElement() {
+    return document.querySelector(".plyr__video-wrapper video");
 }
+
+function pausePlayer() {
+    if (player) {
+        player.pause();
+        console.debug("[Player] Video paused.");
+    } else {
+        console.error("[Player] Cannot pause, player is undefined.");
+    }
+}
+
+function showPlayer() {
+    const videoElement = getVideoElement();
+    if (videoElement) {
+        videoElement.style.display = "block";
+        console.debug("[Player] Video shown.");
+    } else {
+        console.error("[Player] Cannot show player, element not found.");
+    }
+}
+
+function hidePlayer() {
+    const videoElement = getVideoElement();
+    if (videoElement) {
+        videoElement.style.display = "none";
+        console.debug("[Player] Video hidden.");
+    } else {
+        console.error("[Player] Cannot hide player, element not found.");
+    }
+}
+
+function displayMoveNameOverlay(moveName) {
+    const overlay = document.getElementById("move-name-overlay");
+    if (overlay) {
+        overlay.textContent = moveName;
+        overlay.style.display = "block";
+        console.debug(`[Overlay] Move name displayed: "${moveName}"`);
+    } else {
+        console.error("[Overlay] Move name overlay not found.");
+    }
+}
+
+function hideMoveNameOverlay() {
+    const overlay = document.getElementById("move-name-overlay");
+    if (overlay) {
+        overlay.style.display = "none";
+        console.debug("[Overlay] Move name overlay hidden.");
+    } else {
+        console.error("[Overlay] Move name overlay not found.");
+    }
+}
+
+async function announceMove(moveName) {
+    return new Promise((resolve) => {
+        if (!window.speechSynthesis) {
+            console.warn('[Speech] Speech Synthesis API not supported.');
+            resolve(); // Resolve immediately if speech synthesis isn't available
+            return;
+        }
+
+        console.info(`[Speech] Announcing move: "${moveName}"`);
+
+        // Pause player and hide it
+        pausePlayer();
+        hidePlayer();
+
+        // Display the move name overlay
+        displayMoveNameOverlay(moveName);
+
+        const utterance = new SpeechSynthesisUtterance(moveName);
+        utterance.rate = 1.0;
+        utterance.volume = 1.0;
+        utterance.lang = 'en-US';
+
+        utterance.onend = () => {
+            console.info('[Speech] Move announcement complete.');
+            
+            // Hide move name and show player
+            hideMoveNameOverlay();
+            showPlayer();
+
+            resolve(); // Resolve the promise when the announcement is done
+        };
+
+        speechSynthesis.speak(utterance);
+    });
+}
+
+window.announceMove = announceMove;
 
 function playMoveByIndex(moveIndex) {
     const move = allMoves[moveIndex];
