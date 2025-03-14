@@ -17,7 +17,7 @@ let currentVideoIndex = -1;         // Index of the currently playing video in a
 let isLoopEnabled = false;
 let isAlternateSoundtrackEnabled = false;
 
-const REPEAT_COUNT = 3;
+const REPEAT_COUNT = 2;
 let currentRepeat = 0;
 
 let audioPlayer = new Audio();      // Create an audio element for the alternate soundtrack
@@ -160,26 +160,37 @@ export function initializeSpeedSlider() {
         return;
     }
 
+    console.info('[Player] Found speed slider. Initializing...');
+
     // Initialize slider to default speed
     const defaultSpeed = 1.0;
     const defaultIndex = speeds.indexOf(defaultSpeed);
 
     if (defaultIndex !== -1) {
-        slider.value = defaultIndex;            // Set slider position
-        updateSpeedFromSlider(defaultIndex);    // Sync player speed
+        slider.value = defaultIndex;            
+        updateSpeedFromSlider(defaultIndex);    
         console.info(`[Player] Speed slider initialized to ${defaultSpeed}x.`);
     } else {
         console.warn('[Player] Default speed (1.0) not found in speeds array.');
     }
 
-    // Enable override only when the user clicks or presses a key
-    slider.addEventListener('mousedown', () => isSpeedOverride = true);
-    slider.addEventListener('keydown', () => isSpeedOverride = true);
+    // ✅ Debug: Log when event listeners are attached
+    console.debug('[Speed Slider] Adding event listeners...');
 
-    // Set up event listener for slider interaction
+    slider.addEventListener('mousedown', () => {
+        isSpeedOverride = true;
+        console.debug('[Speed Override] isSpeedOverride set to true (mousedown)');
+    });
+    
+    slider.addEventListener('keydown', () => {
+        isSpeedOverride = true;
+        console.debug('[Speed Override] isSpeedOverride set to true (keydown)');
+    });
+
     slider.addEventListener('input', (event) => {
         const sliderIndex = parseInt(event.target.value, 10);
         updateSpeedFromSlider(sliderIndex);
+        console.debug(`[Speed Override] Speed slider adjusted to index: ${sliderIndex}`);
     });
 
     console.info('[Player] Speed slider setup and initialization complete.');
@@ -656,9 +667,7 @@ function jumpToPreviousMove() {
 
     console.info(`[Keyboard] Jumping to previous move: "${previousMove.move_name}"`);
 
-    // Pause player and display move name before seeking
-    player.pause();
-    displayMoveNameOverlay(previousMove.move_name);
+    playMoveByIndex(previousMoveIndex);
 }
 
 function jumpToNextMove() {
@@ -675,9 +684,7 @@ function jumpToNextMove() {
 
     console.info(`[Keyboard] Jumping to next move: "${nextMove.move_name}"`);
 
-    // Pause player and display move name before seeking
-    player.pause();
-    displayMoveNameOverlay(nextMove.move_name);
+    playMoveByIndex(nextMoveIndex);
 }
 
 // Function to adjust the speed slider
@@ -768,7 +775,9 @@ function sanitizeMoveName(moveName) {
 
     return moveName
         .replace(/^\./, "") // Remove leading periods
-        .replace(/\bCBL\b/g, "Cross Body Lead") // Expand CBL
+        .replace(/\bCBL\b/g, "Cross Body Lead")
+        .replace(/\bRCBL\b/g, "Reverse Cross Body Lead")
+        .replace(/\bCOP\b/g, "Change Of Place")
         .replace(/LL/g, "") // Remove LL
         .replace(/RR/g, "") // Remove RR
         .replace(/LR/g, "") // Remove LR
