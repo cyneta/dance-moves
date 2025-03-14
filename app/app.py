@@ -246,7 +246,7 @@ def playlist(dance_type):
     """
     Render the HTML page for the given dance type.
     """
-    valid_dance_types = ['salsa', 'bachata', 'ecs', 'wcs', 'zouk']
+    valid_dance_types = ['salsa', 'bachata', 'casino', 'ecs', 'wcs']
     
     # Validate dance type
     if dance_type.lower() not in valid_dance_types:
@@ -267,16 +267,16 @@ def get_moves(dance_type):
     sheet_urls = {
         'salsa': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=886932256",
         'bachata': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=232533163",
+        'casino': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=617690693",
         'ecs': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=350828170",
         'wcs': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=2088273102",
-        'zouk': "https://docs.google.com/spreadsheets/d/1yy3e6ImtEXoaVS-4tDP0_LQefCOXeDqWTAaV_BO__hY/export?format=csv&gid=617690693",
     }
 
     # Validate dance type
     sheet_url = sheet_urls.get(dance_type.lower())
     if not sheet_url:
         logging.error(f"Unsupported dance type: {dance_type}")
-        return jsonify({"error": "Unsupported dance type. Available types are: salsa, bachata, ecs, wcs, zouk"}), 404
+        return jsonify({"error": "Unsupported dance type. Available types are: salsa, bachata, casino, ecs, wcs"}), 404
 
     # Fetch the data
     data = fetch_sheet_data(sheet_url)

@@ -29,9 +29,9 @@ let isStopMotionEnabled = false;    // Global flag for stop-motion effect
 const altSoundtracksByType = {
     "salsa": "salsa_loop.mp3",
     "bachata": "Bachata Mix 2020 OSOCITY.mp3",
+    "casino": "Rueda De Casino - En Mi Puertorro - Timba Heat Music Video.m4a",
     "ecs": "Aretha Franklin - Good times.mp3",
     "wcs": "West Coast Swing Classic.mp3",
-    "zouk": "Zouk Love - Ultimate Mix.mp3"
 };
 
 // Initialize Player UI
