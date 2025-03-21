@@ -725,19 +725,25 @@ export function setupKeyboardControls() {
 }
 
 // Bind media control events (for iPad remote control)
-navigator.mediaSession.setActionHandler("play", () => toggleAlternateAudio());
-navigator.mediaSession.setActionHandler("pause", () => toggleAlternateAudio());
+navigator.mediaSession.setActionHandler("play", () => togglePlayPause());
+navigator.mediaSession.setActionHandler("pause", () => togglePlayPause());
 navigator.mediaSession.setActionHandler("previoustrack", () => previousVideo());
 navigator.mediaSession.setActionHandler("nexttrack", () => nextVideo());
 
 // Player control event handlers
 function togglePlayPause() {
     if (player.paused) {
-        player.play();
-        logToDebugWindow("[Media Control] Play");
+        if (currentVideoIndex === -1 && moveTableIndices.length > 0) {
+            logToDebugWindow("[Player] No move loaded. Playing first move in playlist.");
+            setLoopEnabled(true); // ✅ Ensure looping is active
+            playMoveByIndex(moveTableIndices[0]);
+        } else {
+            player.play();
+        }
+        logToDebugWindow("[Player] Play");
     } else {
         player.pause();
-        logToDebugWindow("[Media Control] Pause");
+        logToDebugWindow("[Player] Pause");
     }
 }
 
@@ -1059,6 +1065,17 @@ function updateCurrentMoveHighlight() {
             if (moveNameCell) {
                 moveNameCell.classList.add('current-move');
                 console.info(`[Move Highlighting] Bolded move name for "${allMoves[currentVideoIndex].move_name}".`);
+            }
+
+            // ✅ Use the correct scroll container
+            const scrollContainer = document.getElementById('moves-table-container');
+            if (scrollContainer) {
+                const rowOffset = currentRow.offsetTop;
+                const rowHeight = currentRow.offsetHeight;
+                const visibleHeight = scrollContainer.clientHeight;
+
+                const scrollTarget = rowOffset - (visibleHeight / 2) + (rowHeight / 2);
+                scrollContainer.scrollTop = Math.max(0, scrollTarget);
             }
         }
     }
