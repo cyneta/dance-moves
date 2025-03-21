@@ -118,7 +118,7 @@ export function initializePlayerUI() {
         console.debug('[Player] Determined playback speed:', speed);
     
         // Explicitly set player speed when move is selected
-        setPlayerSpeed(speed);
+        setPlaybackSpeed(speed);
 
         // Update the global index
         currentVideoIndex = moveIndex;
@@ -175,7 +175,7 @@ export function initializeSpeedSlider() {
         console.warn('[Player] Default speed (1.0) not found in speeds array.');
     }
 
-    // ✅ Debug: Log when event listeners are attached
+    // Debug: Log when event listeners are attached
     console.debug('[Speed Slider] Adding event listeners...');
 
     slider.addEventListener('mousedown', () => {
@@ -265,11 +265,11 @@ export function playVideo({
     const sliderValue = sliderElement ? parseInt(sliderElement.value, 10) : null;
 
     // Use loop speed unless manually overridden by the user
-    const calculatedSpeed = (isSpeedOverride && sliderValue !== null) ? speeds[sliderValue] : speed;
+    const calculatedSpeed = isSpeedOverride ? getPlaybackSpeed() : speed;
 
     console.debug(`[Player] isSpeedOverride: ${isSpeedOverride}, Slider Value: ${sliderValue}, Using Speed: ${calculatedSpeed}`);
 
-    setPlayerSpeed(calculatedSpeed);
+    setPlaybackSpeed(calculatedSpeed);
 
     const videoSrc = `/static/videos/${video_filename}`;
     console.debug(`[Player: Play Video] Resolving playback for "${video_filename}".`);
@@ -362,7 +362,7 @@ function hidePlayer() {
 }
 
 // Set Player Speed
-export function setPlayerSpeed(speed) {
+export function setPlaybackSpeed(speed) {
     const closestSpeed = speeds.reduce((prev, curr) => Math.abs(curr - speed) < Math.abs(prev - speed) ? curr : prev);
     player.speed = closestSpeed;
 
@@ -378,16 +378,16 @@ export function setPlayerSpeed(speed) {
     console.info(`[Player] Speed set to ${closestSpeed}.`);
 }
 
-// Determine Playback Speed
-export function determinePlaybackSpeed(loopSpeed) {
-    if (isSpeedOverride) {
-        const sliderValue = parseInt(document.getElementById('speed-slider')?.value, 10);
-        return speeds[sliderValue] || 1.0; // Use the override value if set
-    }
-    return loopSpeed || 1.0; // Default to loop speed or 1x
+function getPlaybackSpeed() {
+    const slider = document.getElementById('speed-slider');
+    const sliderValue = parseInt(slider?.value, 10);
+    return speeds[sliderValue] || 1.0;
 }
 
-// Update Speed From Slider
+export function determinePlaybackSpeed(loopSpeed) {
+    return isSpeedOverride ? getPlaybackSpeed() : (loopSpeed || 1.0);
+}
+
 function updateSpeedFromSlider(sliderIndex) {
     if (sliderIndex < 0 || sliderIndex >= speeds.length) {
         console.error('[Player] Invalid slider index:', sliderIndex);
@@ -400,9 +400,14 @@ function updateSpeedFromSlider(sliderIndex) {
     document.getElementById('speed-display').innerText = `${speed}x`;
 
     console.debug(`[Player] Speed updated to ${speed} (Slider index: ${sliderIndex}).`);
+
+    // Also update alternate audio speed if it's enabled
+    if (isAlternateSoundtrackEnabled) {
+        audioPlayer.playbackRate = speed;
+        logToDebugWindow(`[Alt Audio] Updated playback rate to ${speed}`);
+    }
 }
 
-// Function to toggle autoplay
 export function toggleAutoplay(enabled) {
     isAutoplayEnabled = enabled;
     console.info(`[Autoplay] Autoplay is now ${enabled ? 'enabled' : 'disabled'}.`);
@@ -735,7 +740,7 @@ function togglePlayPause() {
     if (player.paused) {
         if (currentVideoIndex === -1 && moveTableIndices.length > 0) {
             logToDebugWindow("[Player] No move loaded. Playing first move in playlist.");
-            setLoopEnabled(true); // ✅ Ensure looping is active
+            setLoopEnabled(true); // Ensure looping is active
             playMoveByIndex(moveTableIndices[0]);
         } else {
             player.play();
@@ -780,7 +785,7 @@ function toggleAlternateAudio(force) {
 
     const toggle = document.getElementById('alternate-soundtrack-switch');
     if (toggle && toggle.checked !== newState) {
-        toggle.checked = newState; // ✅ This updates UI without triggering change event
+        toggle.checked = newState; // This updates UI without triggering change event
     }
 
     logToDebugWindow(`[Alternate Audio] ${newState ? "Enabled" : "Disabled"}`);
@@ -795,9 +800,15 @@ function toggleAlternateAudio(force) {
         }
     
         audioPlayer.loop = true;
+
+        // Sync playback rate with speed slider
+        const speed = getPlaybackSpeed();
+        audioPlayer.playbackRate = speed;
+        logToDebugWindow(`[Alt Audio] Set playback rate to ${speed}`);
+
         audioPlayer.play().catch(err => logToDebugWindow(`[Alt Audio] Playback failed: ${err}`));
     
-        // ✅ Always mute video when alternate audio is active
+        // Always mute video when alternate audio is active
         if (!player.muted) {
             player.muted = true;
             logToDebugWindow("[Alt Audio] Muted video player.");
@@ -807,7 +818,7 @@ function toggleAlternateAudio(force) {
         // Disable alternate audio
         audioPlayer.pause();
     
-        // ✅ Only unmute video if autoplay is not active
+        // Only unmute video if autoplay is not active
         if (!isAutoplayEnabled && player.muted) {
             player.muted = false;
             logToDebugWindow("[Alt Audio] Unmuted video player.");
@@ -990,7 +1001,7 @@ function startPlayback(video_filename, start, end, speed, notes, step_counter, a
     console.debug(`[Alternate Soundtrack] Received filename: ${alt_soundtrack}`);
 
     updateCurrentMoveHighlight();
-    setPlayerSpeed(speed);
+    setPlaybackSpeed(speed);
     displayNotes(notes);
 
     if (isLoopEnabled && end !== null) {
@@ -1067,7 +1078,7 @@ function updateCurrentMoveHighlight() {
                 console.info(`[Move Highlighting] Bolded move name for "${allMoves[currentVideoIndex].move_name}".`);
             }
 
-            // ✅ Use the correct scroll container
+            // Use the correct scroll container
             const scrollContainer = document.getElementById('moves-table-container');
             if (scrollContainer) {
                 const rowOffset = currentRow.offsetTop;
