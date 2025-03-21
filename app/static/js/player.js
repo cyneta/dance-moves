@@ -16,6 +16,7 @@ let isAutoplayEnabled = false;
 let currentVideoIndex = -1;         // Index of the currently playing video in allMoves
 let isLoopEnabled = false;
 let isAlternateSoundtrackEnabled = false;
+let isDebugOverlayEnabled = false;
 
 const REPEAT_COUNT = 2;
 let currentRepeat = 0;
@@ -167,8 +168,8 @@ export function initializeSpeedSlider() {
     const defaultIndex = speeds.indexOf(defaultSpeed);
 
     if (defaultIndex !== -1) {
-        slider.value = defaultIndex;            
-        updateSpeedFromSlider(defaultIndex);    
+        slider.value = defaultIndex;
+        updateSpeedFromSlider(defaultIndex);
         console.info(`[Player] Speed slider initialized to ${defaultSpeed}x.`);
     } else {
         console.warn('[Player] Default speed (1.0) not found in speeds array.');
@@ -231,32 +232,7 @@ export function initializeAlternateSoundtrackToggle() {
     }
 
     altSoundtrackToggle.addEventListener('change', (event) => {
-        isAlternateSoundtrackEnabled = event.target.checked;
-        console.info(`[Alternate Soundtrack] Toggle set to ${isAlternateSoundtrackEnabled ? 'enabled' : 'disabled'}.`);
-
-        // Get dance type
-        const danceType = document.body.dataset.danceType || "salsa"; // Default to Salsa
-        const alt_soundtrack = altSoundtracksByType[danceType];
-
-        if (isAlternateSoundtrackEnabled) {
-            console.info(`[Alternate Soundtrack] Switching to "${alt_soundtrack}" for ${danceType}.`);
-            player.muted = true;
-            
-            if (audioPlayer.src !== `/static/videos/${alt_soundtrack}`) {
-                audioPlayer.src = `/static/videos/${alt_soundtrack}`;
-            }
-
-            audioPlayer.loop = true;
-            // audioPlayer.currentTime = ??
-            audioPlayer.play().catch(error => {
-                console.error('[Alternate Soundtrack] Audio playback failed:', error);
-            });
-
-        } else {
-            console.info('[Alternate Soundtrack] Disabling alternate soundtrack.');
-            player.muted = false;
-            audioPlayer.pause();
-        }
+        toggleAlternateAudio(event.target.checked);
     });
 
     console.info('[Alternate Soundtrack] Toggle switch initialized.');
@@ -464,9 +440,16 @@ export function playVideoByDesignator(designator) {
     }
 }
 
-// Play the next video in the sequence
 function playNextVideo() {
-    console.info("[Autoplay] Attempting to play the next move.");
+    playVideoRelativeToCurrent(1);
+}
+
+function playPreviousVideo() {
+    playVideoRelativeToCurrent(-1);
+}
+
+function playVideoRelativeToCurrent(offset) {
+    console.info(`[Autoplay] Attempting to play move with offset ${offset}.`);
 
     if (!moveTableIndices.length) {
         console.error('[Autoplay] No moves available in the table.');
@@ -479,28 +462,35 @@ function playNextVideo() {
         return;
     }
 
-    const nextTableIndex = (currentTableIndex + 1) % moveTableIndices.length;
-    const nextMoveIndex = moveTableIndices[nextTableIndex];
-    const nextMove = allMoves[nextMoveIndex];
+    let targetTableIndex = currentTableIndex + offset;
 
-    if (!nextMove) {
-        console.error('[Autoplay] No next move found.');
+    // Wrap forward or clamp backward
+    if (targetTableIndex >= moveTableIndices.length) {
+        targetTableIndex = 0;
+    } else if (targetTableIndex < 0) {
+        targetTableIndex = 0; // Or optionally: moveTableIndices.length - 1
+    }
+
+    const targetMoveIndex = moveTableIndices[targetTableIndex];
+    const targetMove = allMoves[targetMoveIndex];
+
+    if (!targetMove) {
+        console.error('[Autoplay] Target move not found.');
         return;
     }
 
-    console.info(`[Autoplay] Playing next move: "${nextMove.move_name}"`);
+    console.info(`[Autoplay] Playing move: "${targetMove.move_name}"`);
 
-    // Remove existing loop handler to prevent unintended repeats
+    // Clear existing loop handler
     if (player?.media?.loopHandler) {
         player.media.removeEventListener('timeupdate', player.media.loopHandler);
         player.media.loopHandler = null;
         console.info("[Autoplay] Cleared existing loop listener.");
     }
 
-    // Announce the move, then play the next move only after the announcement finishes
-    announceMove(sanitizeMoveName(nextMove.move_name)).then(() => {
+    announceMove(sanitizeMoveName(targetMove.move_name)).then(() => {
         console.info("[Autoplay] Move announcement finished, now playing video.");
-        playMoveByIndex(nextMoveIndex);
+        playMoveByIndex(targetMoveIndex);
     });
 }
 
@@ -653,40 +643,6 @@ function hideMoveNameOverlay() {
     }
 }
 
-function jumpToPreviousMove() {
-    if (!moveTableIndices.length) return;
-    
-    const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
-    if (currentTableIndex === -1 || currentTableIndex === 0) {
-        console.warn("[Keyboard] Already at the first move.");
-        return;
-    }
-
-    const previousMoveIndex = moveTableIndices[currentTableIndex - 1];
-    const previousMove = allMoves[previousMoveIndex];
-
-    console.info(`[Keyboard] Jumping to previous move: "${previousMove.move_name}"`);
-
-    playMoveByIndex(previousMoveIndex);
-}
-
-function jumpToNextMove() {
-    if (!moveTableIndices.length) return;
-    
-    const currentTableIndex = moveTableIndices.indexOf(currentVideoIndex);
-    if (currentTableIndex === -1 || currentTableIndex >= moveTableIndices.length - 1) {
-        console.warn("[Keyboard] Already at the last move.");
-        return;
-    }
-
-    const nextMoveIndex = moveTableIndices[currentTableIndex + 1];
-    const nextMove = allMoves[nextMoveIndex];
-
-    console.info(`[Keyboard] Jumping to next move: "${nextMove.move_name}"`);
-
-    playMoveByIndex(nextMoveIndex);
-}
-
 // Function to adjust the speed slider
 function adjustSpeed(change) {
     const slider = document.getElementById('speed-slider');
@@ -703,38 +659,36 @@ function adjustSpeed(change) {
     console.debug(`[Speed Control] Speed slider adjusted to index: ${newValue}`);
 }    
 
-// Setup Keyboard Controls
-export function setupKeyboardControls() { 
+// Setup Keyboard & Remote Control Events
+export function setupKeyboardControls() {
     window.addEventListener('keydown', (event) => {
         if (!player) return;
-    
+
         const key = event.key;
         const shiftPressed = event.shiftKey;
-        const seekAmount = shiftPressed ? .5 : .034;
 
         console.debug('[Keyboard] Keydown event captured:', { key, shiftPressed });
 
-        if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'm', 'f', 's', 'S', 'N', 'n'].includes(key)) {
-            event.preventDefault();
-        }
+    if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'm', 'f', 's', 'S', 'N', 'n', 'Enter', 'MediaPlayPause', 'MediaTrackNext', 'MediaTrackPrevious'].includes(key)) {
+        event.preventDefault();
+    }
 
         switch (key) {
             case ' ':
-                player.togglePlay();
+            case 'Enter':
+                togglePlayPause();
                 break;
             case 'ArrowLeft':
-                player.currentTime = Math.max(0, player.currentTime - seekAmount);
+                scrubVideoFast("back");
                 break;
             case 'ArrowRight':
-                player.currentTime = Math.min(player.duration, player.currentTime + seekAmount);
+                scrubVideoFast("forward");
                 break;
             case 'ArrowUp':
-                player.volume = Math.min(1, player.volume + 0.1);
-                console.debug(`[Volume] Increased to: ${player.volume}`);
+                scrubVideoSlow("back");
                 break;
             case 'ArrowDown':
-                player.volume = Math.max(0, player.volume - 0.1);
-                console.debug(`[Volume] Decreased to: ${player.volume}`);
+                scrubVideoSlow("forward");
                 break;
             case 'S':
                 adjustSpeed(1);
@@ -757,17 +711,102 @@ export function setupKeyboardControls() {
             case 'N':  // Shift + N for Previous Move
                 if (isLoopEnabled) {
                     console.info("[Keyboard] Jumping to previous move.");
-                    jumpToPreviousMove();
+                    previousVideo();
                 }
                 break;
             case 'n':  // N for Next Move
                 if (isLoopEnabled) {
                     console.info("[Keyboard] Jumping to next move.");
-                    jumpToNextMove();
+                    nextVideo();
                 }
                 break;
         }
     });
+}
+
+// Bind media control events (for iPad remote control)
+navigator.mediaSession.setActionHandler("play", () => toggleAlternateAudio());
+navigator.mediaSession.setActionHandler("pause", () => toggleAlternateAudio());
+navigator.mediaSession.setActionHandler("previoustrack", () => previousVideo());
+navigator.mediaSession.setActionHandler("nexttrack", () => nextVideo());
+
+// Player control event handlers
+function togglePlayPause() {
+    if (player.paused) {
+        player.play();
+        logToDebugWindow("[Media Control] Play");
+    } else {
+        player.pause();
+        logToDebugWindow("[Media Control] Pause");
+    }
+}
+
+function nextVideo() {
+    logToDebugWindow("[Media Control] Next Video");
+    playNextVideo();
+}
+
+function previousVideo() {
+    logToDebugWindow("[Media Control] Previous Video");
+    playPreviousVideo();
+}
+
+function scrubVideoFast(direction) {
+    const seekAmount = direction === "forward" ? .5 : -.5;
+    player.currentTime = Math.max(0, player.currentTime + seekAmount);
+    logToDebugWindow(`[Media Control] Fast Scrub: ${seekAmount}s`);
+}
+
+function scrubVideoSlow(direction) {
+    const seekAmount = direction === "forward" ? .034 : -.034;
+    player.currentTime = Math.max(0, player.currentTime + seekAmount);
+    logToDebugWindow(`[Media Control] Slow Scrub: ${seekAmount}s`);
+}
+
+function toggleAlternateAudio(force) {
+    const newState = typeof force === 'boolean' ? force : !isAlternateSoundtrackEnabled;
+    
+    if (newState === isAlternateSoundtrackEnabled) {
+        return; // No change, exit early
+    }
+
+    isAlternateSoundtrackEnabled = newState;
+
+    const toggle = document.getElementById('alternate-soundtrack-switch');
+    if (toggle && toggle.checked !== newState) {
+        toggle.checked = newState; // ✅ This updates UI without triggering change event
+    }
+
+    logToDebugWindow(`[Alternate Audio] ${newState ? "Enabled" : "Disabled"}`);
+
+    const danceType = document.body.dataset.danceType || "salsa";
+    const alt_soundtrack = altSoundtracksByType[danceType];
+
+    if (newState) {
+        // Enable alternate audio
+        if (audioPlayer.src !== `/static/videos/${alt_soundtrack}`) {
+            audioPlayer.src = `/static/videos/${alt_soundtrack}`;
+        }
+    
+        audioPlayer.loop = true;
+        audioPlayer.play().catch(err => logToDebugWindow(`[Alt Audio] Playback failed: ${err}`));
+    
+        // ✅ Always mute video when alternate audio is active
+        if (!player.muted) {
+            player.muted = true;
+            logToDebugWindow("[Alt Audio] Muted video player.");
+        }
+    
+    } else {
+        // Disable alternate audio
+        audioPlayer.pause();
+    
+        // ✅ Only unmute video if autoplay is not active
+        if (!isAutoplayEnabled && player.muted) {
+            player.muted = false;
+            logToDebugWindow("[Alt Audio] Unmuted video player.");
+        }
+    }    
 }
 
 function sanitizeMoveName(moveName) {
@@ -1048,16 +1087,42 @@ function seekToStart(start) {
     });    
 }
 
-// function logDebugMessage(message) {
-//     const debugContainer = document.getElementById("debug-messages");
-//     if (!debugContainer) return;
+function logToDebugWindow(message) {
+    console.log(message); // Always log to browser console
 
-//     const newMessage = document.createElement("div");
-//     newMessage.textContent = message;
-//     debugContainer.appendChild(newMessage);
+    const debugContainer = document.getElementById("debug-log");
+    const messageContainer = document.getElementById("debug-messages");
 
-//     // Scroll to the bottom so latest messages are visible
-//     debugContainer.parentElement.scrollTop = debugContainer.parentElement.scrollHeight;
+    if (!isDebugOverlayEnabled) {
+        if (debugContainer) {
+            debugContainer.style.display = "none"; // 🔒 Hide the container
+        }
+        return;
+    }
 
-//     console.debug(message); // Still log to console if available
-// }
+    if (!messageContainer) {
+        console.warn("[Debug] #debug-messages container not found.");
+        return;
+    }
+
+    debugContainer.style.display = "block"; // 🔓 Ensure it's visible when enabled
+
+    const p = document.createElement("p");
+    p.style.margin = "0";
+    p.textContent = message;
+    messageContainer.appendChild(p);
+
+    debugContainer.scrollTop = debugContainer.scrollHeight;
+}
+
+// Log all keyboard events
+document.addEventListener("keydown", (event) => {
+    logToDebugWindow(`[Keyboard] Keydown: ${event.key}, Code: ${event.code}`);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const debugContainer = document.getElementById("debug-log");
+    if (debugContainer) {
+        debugContainer.style.display = isDebugOverlayEnabled ? "block" : "none";
+    }
+});
