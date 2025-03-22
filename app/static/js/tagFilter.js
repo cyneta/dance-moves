@@ -8,6 +8,18 @@ console.info('[Global] tagFilter.js loaded');
 const DEFAULT_TAG = 'no filter';
 let currentTag = DEFAULT_TAG;
 
+// Parse numeric prefix from a tag like '12#cool_moves' -> { order: 12, tag: 'cool_moves' }
+function parsePrefixedTag(tag) {
+    const match = tag.match(/^(\d+)#(.*)$/);
+    if (match) {
+        return {
+            order: parseInt(match[1], 10),
+            tag: `#${match[2]}`  // <- retain the leading hash
+        };
+    }
+    return { order: null, tag };
+}
+
 // Getter for the current tag
 export function getCurrentTag() {
     return currentTag;
@@ -26,17 +38,31 @@ function updateDropdownButtonText(tag) {
         : `Tag filter: ${tag}`;
 }
 
-// Filters moves based on the selected tag and playlist
-function filterMovesByTag(tag, playlist) {
-    return allMoves.filter(move => {
-        if (playlist && !move.playlist_tags?.[playlist]?.length) {
-            return false;
+// Filters and sorts moves by normalized tag group
+function filterMovesByTag(selectedTag, playlist) {
+    if (selectedTag === DEFAULT_TAG) {
+        return allMoves.filter(move => move.playlist_tags?.[playlist]?.length);
+    }
+
+    const results = [];
+
+    for (const move of allMoves) {
+        const rawTags = move.playlist_tags?.[playlist] || [];
+
+        for (const rawTag of rawTags) {
+            const { order, tag } = parsePrefixedTag(rawTag);
+            if (tag === selectedTag) {
+                results.push({
+                    move,
+                    sortOrder: order !== null ? order : Infinity
+                });
+                break; // Only one match per move is expected
+            }
         }
-        if (tag !== DEFAULT_TAG && !move.playlist_tags?.[playlist]?.includes(tag)) {
-            return false;
-        }
-        return true;
-    });
+    }
+
+    results.sort((a, b) => a.sortOrder - b.sortOrder);
+    return results.map(entry => entry.move);
 }
 
 // Sets the current tag and updates the move table
@@ -57,17 +83,22 @@ export function resetTagFilter(playlist) {
     setTag(DEFAULT_TAG, playlist);
 }
 
-// Updates the dropdown menu with available tags
+// Updates the dropdown menu with normalized tags only
 export function updateTagFilter(playlist) {
-    const tags = [DEFAULT_TAG];
-    allMoves.forEach(move => {
-        if (move.playlist_tags?.[playlist]) {
-            tags.push(...move.playlist_tags[playlist]);
-        }
-    });
+    const normalizedTags = new Set([DEFAULT_TAG]);
 
-    const uniqueTags = [...new Set(tags)];
-    console.info(`[Tag Filter] Updated dropdown menu with ${uniqueTags.length} tags for playlist "${playlist}".`);
+    for (const move of allMoves) {
+        const rawTags = move.playlist_tags?.[playlist] || [];
+    
+        for (const rawTag of rawTags) {
+            const hasPrefix = /^\d+#/.test(rawTag);
+            const normalized = hasPrefix ? parsePrefixedTag(rawTag).tag : rawTag;
+            normalizedTags.add(normalized);
+        }
+    }
+
+    const sortedTags = [...normalizedTags];
+    console.info(`[Tag Filter] Updated dropdown menu with ${sortedTags.length} tags for playlist "${playlist}".`);
 
     const tagDropdownMenu = document.getElementById('tagDropdownMenu');
     if (!tagDropdownMenu) {
@@ -75,7 +106,7 @@ export function updateTagFilter(playlist) {
         return;
     }
 
-    tagDropdownMenu.innerHTML = uniqueTags.map(tag =>
+    tagDropdownMenu.innerHTML = sortedTags.map(tag =>
         `<li><a class="dropdown-item" href="#" data-tag="${tag}">${tag}</a></li>`
     ).join('');
 
@@ -86,7 +117,6 @@ export function updateTagFilter(playlist) {
         });
     });
 
-    // Reset the tag filter after updating the dropdown
     resetTagFilter(playlist);
     console.info('[Tag Filter] Tag filter reset after updating dropdown.');
 }

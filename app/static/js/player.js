@@ -62,42 +62,6 @@ export function initializePlayerUI() {
         controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
     });
 
-    // // Set a placeholder source to "activate" the media session early
-    // player.source = {
-    //     type: 'video',
-    //     sources: [{
-    //         src: '/static/videos/Gilberto Santa RosaConciencia (Official Video).mp4',
-    //         type: 'video/mp4'
-    //     }]
-    // };
-
-    // playVideo({
-    //     video_filename: 'Gilberto Santa RosaConciencia (Official Video).mp4',
-    //     start: 0,
-    //     end: null,
-    //     speed: 1.0,
-    //     notes: 'Welcome to Dance Moves!',
-    //     step_counter: null
-    // });
-
-    // player.muted = true;
-    // seekToStart(0);
-    // player.pause();
-
-    // if ('mediaSession' in navigator) {
-    //     navigator.mediaSession.metadata = new MediaMetadata({
-    //         title: "Ready",
-    //         artist: "Dance Moves",
-    //         artwork: []
-    //     });
-    // }
-
-    // player.muted = true;
-    // player.play().then(() => {
-    //     logToDebugWindow("[MediaSession] Silent playback started to activate session.");
-    //     player.pause();
-    // });
-
     console.info('[Player] Player initialized.');
 
     // Attach hideInstructions to player "play" event
