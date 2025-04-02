@@ -78,7 +78,11 @@ export function initializePlaylists() {
         return;
     }
 
-    // Set the first playlist as active
-    selectPlaylist(allPlaylists[0]);
-    updatePlaylistButtons(allPlaylists[0]);
+    const numberedPlaylist = allPlaylists.find(pl => /^\d/.test(pl));
+    const initialPlaylist = numberedPlaylist || allPlaylists[0];
+
+    console.debug(`[Playlist Init] Selected playlist: "${initialPlaylist}"`);
+
+    selectPlaylist(initialPlaylist);
+    updatePlaylistButtons(initialPlaylist);
 }

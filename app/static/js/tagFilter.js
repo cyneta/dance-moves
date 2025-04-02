@@ -117,6 +117,10 @@ export function updateTagFilter(playlist) {
         });
     });
 
-    resetTagFilter(playlist);
-    console.info('[Tag Filter] Tag filter reset after updating dropdown.');
+    // Reset the tag filter after updating the dropdown
+    const tagArray = [...normalizedTags];
+    const initialTag = tagArray.find(tag => tag !== DEFAULT_TAG) || DEFAULT_TAG;
+    setTag(initialTag, playlist);
+
+    console.info('[Tag Filter] Tag filter initialized to first available tag.');
 }
