@@ -2,7 +2,7 @@
 "use strict";
 import { allMoves } from './index.js';
 import { on } from './common.js';
-import { moveTableIndices } from './movesTable.js';
+import { moveTableIndices, displayNotes } from './movesTable.js';
 
 console.info('[Global] player.js loaded');
 
@@ -132,6 +132,7 @@ export function initializePlayerUI() {
             end: isLooping ? loop_end : null,
             speed,
             notes,
+            move_name: move.move_name,
             step_counter
         });
     });
@@ -280,13 +281,14 @@ export function playVideo({
     end,
     speed = 1,
     notes = '',
+    move_name = '',
     step_counter = null
 }) {
     if (!video_filename) {
         console.warn('[Player: Play Video] No video filename provided. Displaying placeholder.');
         document.getElementById('player').style.display = 'none';
         document.getElementById('player-placeholder').style.display = 'block';
-        displayNotes("No video available for this move.");
+        displayNotes(move_name, "No video available for this move.");
         return;
     }
 
@@ -320,6 +322,7 @@ export function playVideo({
                 start,
                 end,
                 calculatedSpeed,
+                move_name,
                 notes,
                 step_counter,
                 alt_soundtrack
@@ -330,13 +333,13 @@ export function playVideo({
             console.error('[Player: Play Video] Error loading video:', error);
             hidePlayer();
             document.getElementById('player-placeholder').style.display = 'block';
-            displayNotes("Failed to load video.");
+            displayNotes(move_name, "Failed to load video.");
         });
     } catch (error) {
         console.error('[Player: Play Video] Unexpected error:', error);
         hidePlayer();
         document.getElementById('player-placeholder').style.display = 'block';
-        displayNotes("Unexpected error occurred while loading video.");
+        displayNotes("", "Unexpected error occurred while loading video.");
     }
 }
 
@@ -355,6 +358,7 @@ function playMoveByIndex(moveIndex) {
         end: move.loop_end,
         speed: move.loop_speed,
         notes: move.notes,
+        move_name: move.move_name,
         step_counter: move.step_counter
     });
 
@@ -455,13 +459,15 @@ export function playVideoByDesignator(designator) {
     const move = allMoves.find(
         move => move.video_id === designator || move.video_filename === designator
     );
-
     if (move) {
         playVideo({
             video_filename: move.video_filename,
             start: move.loop_start || 0,
             end: move.loop_end || null,
-            speed: player.speed, // Use the player's current speed
+            speed: player.speed,
+            notes: move.notes,
+            move_name: move.move_name,
+            step_counter: move.step_counter
         });
 
         // Ensure the video is paused after loading
@@ -1023,19 +1029,16 @@ function hideInstructions() {
     console.debug('[Player UI] Splash screen hidden.');
 }
 
-function displayNotes(notes) {
-    const formattedNotes = notes.replace(/  /g, "\n"); // Replace double spaces with newlines
-    document.getElementById('notes-content').innerText = formattedNotes; // Preserve newlines
-    console.debug(`[Notes] Updated notes: ${formattedNotes}`);
-}
+// displayNotes function moved to movesTable.js
 
-function startPlayback(video_filename, start, end, speed, notes, step_counter, alt_soundtrack) {
+
+function startPlayback(video_filename, start, end, speed, move_name, notes, step_counter, alt_soundtrack) {
     console.info(`[Start Playback] Playing video "${video_filename}" | Start=${start}, End=${end}, Speed=${speed}`);
     console.debug(`[Alternate Soundtrack] Received filename: ${alt_soundtrack}`);
 
     updateCurrentMoveHighlight();
     setPlaybackSpeed(speed);
-    displayNotes(notes);
+    displayNotes(move_name, notes);
 
     if (isLoopEnabled && end !== null) {
         applyLooping(start, end, step_counter);

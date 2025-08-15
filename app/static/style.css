@@ -188,6 +188,8 @@ html, body {
     white-space: nowrap; /* Prevent line breaks */
 }
 
+#notes-body { white-space: pre-wrap; } /* Ensure notes wrap correctly */
+
 /* Right Panel: Centered Video Player */
 #right-panel {
     padding: 0;

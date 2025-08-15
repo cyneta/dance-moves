@@ -8,6 +8,29 @@ export let moveTableIndices = [];   // store the indices (into allMoves) of move
 
 console.info('[Global] movesTable.js loaded');
 
+// Display notes in the notes panel with move name and formatted content
+export function displayNotes(moveName, notes) {
+	// Normalize
+	const name = moveName || "";
+	const body = notes || "";
+	
+	// Convert double spaces to newlines for formatting
+	const formattedBody = body.replace(/  /g, "\n");
+
+	const nameEl = document.getElementById('notes-move-name');
+	const sepEl  = document.getElementById('notes-separator');
+	const bodyEl = document.getElementById('notes-body');
+
+	if (nameEl) nameEl.textContent = name;
+	if (bodyEl) bodyEl.textContent = formattedBody;
+
+	// Show separator only if both non-empty
+	const showSeparator = !!(name && body);
+	if (sepEl) {
+		sepEl.style.display = showSeparator ? '' : 'none';
+	}
+}
+
 // Setup Moves Table
 export function setupMovesTable() {
     document.getElementById('moves-table-container').addEventListener('click', (event) => {

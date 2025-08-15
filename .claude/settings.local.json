@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:doc-10-58-sheets.googleusercontent.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

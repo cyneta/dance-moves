@@ -1,5 +1,7 @@
 console.debug('[Debug] Script version: 1.1.0');
 
+import { displayNotes } from './movesTable.js';
+
 const DEFAULT_TAG = 'no filter';
 
 const speeds = [
@@ -28,11 +30,7 @@ function setPlayerSpeed(speed) {
     console.debug(`[Speed Set] Closest value: ${closestSpeed}`);
 }
 
-function displayNotes(notes) {
-    const formattedNotes = notes.replace(/  /g, "\n"); // Replace double spaces with newlines
-    document.getElementById('notes-content').innerText = formattedNotes; // Preserve newlines
-    console.debug(`[Notes] Updated notes: ${formattedNotes}`);
-}
+// displayNotes function is imported from movesTable.js
 
 function updateSpeed(value) {
     const index = parseInt(value, 10);
@@ -47,7 +45,7 @@ function playVideo({ videoFilename, start, end = null, speed = 1, notes = '', is
         console.warn('[Play Video] No video filename provided. Displaying placeholder.');
         document.getElementById('player').style.display = 'none';
         document.getElementById('player-placeholder').style.display = 'block';
-        displayNotes("No video available for this move.");
+        displayNotes("", "No video available for this move.");
         return;
     }
 
@@ -83,13 +81,13 @@ function playVideo({ videoFilename, start, end = null, speed = 1, notes = '', is
             console.error('[Play Video] Error loading video:', error);
             document.getElementById('player').style.display = 'none';
             document.getElementById('player-placeholder').style.display = 'block';
-            displayNotes("Failed to load video.");
+            displayNotes("", "Failed to load video.");
         });
     } catch (error) {
         console.error('[Play Video] Unexpected error:', error);
         document.getElementById('player').style.display = 'none';
         document.getElementById('player-placeholder').style.display = 'block';
-        displayNotes("Unexpected error occurred while loading video.");
+        displayNotes("", "Unexpected error occurred while loading video.");
     }
 }
 
@@ -97,7 +95,7 @@ function executePlayback(start, end, speed, notes, isLooping) {
     console.debug('[Execute Playback] Starting playback logic');
 
     setPlayerSpeed(speed);
-    displayNotes(notes);
+    displayNotes("", notes);
 
     if (isLooping && end !== null) {
         applyLooping(start, end);
@@ -417,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
             player.pause();
             document.getElementById('player-placeholder').style.display = 'block';
             document.getElementById('player').style.display = 'none';
-            displayNotes("An error occurred during playback. Please select a different move or check the video file.");
+            displayNotes("", "An error occurred during playback. Please select a different move or check the video file.");
         });
     }
 
