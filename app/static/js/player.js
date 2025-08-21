@@ -76,6 +76,9 @@ export function initializePlayerUI() {
             hideInstructions();
             console.debug('[Player UI] Instructions hidden.');
             
+            // Ensure video has focus for keyboard controls on touch devices
+            ensureVideoFocus();
+            
             // Resume Alternate Soundtrack when Video Plays
             if (isAlternateSoundtrackEnabled && audioPlayer.paused) {
                 console.info('[Alternate Soundtrack] Resuming playback.');
@@ -317,6 +320,9 @@ export function playVideo({
         };
 
         player.once('loadedmetadata', () => {
+            // Ensure video has focus when it loads for keyboard controls
+            ensureVideoFocus();
+            
             startPlayback(
                 video_filename,
                 start,
@@ -713,6 +719,11 @@ export function setupKeyboardControls() {
         event.preventDefault();
     }
 
+        // Ensure video player has focus for media controls on touch devices
+        if ([' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) {
+            ensureVideoFocus();
+        }
+
         switch (key) {
             case ' ':
             case 'Enter':
@@ -883,6 +894,19 @@ function sanitizeMoveName(moveName) {
 
 function getVideoElement() {
     return document.querySelector(".plyr__video-wrapper video");
+}
+
+// Ensure video player has focus for keyboard controls on touch devices
+function ensureVideoFocus() {
+    if (!player || !player.media) return;
+    
+    try {
+        // Focus the video element to ensure keyboard controls work on touch devices
+        player.media.focus({ preventScroll: true });
+        console.debug('[Focus] Video player focused for keyboard control');
+    } catch (error) {
+        console.debug('[Focus] Could not focus video element:', error);
+    }
 }
 
 function updateFrameTimer(stepCounterParams, loopStart) {
