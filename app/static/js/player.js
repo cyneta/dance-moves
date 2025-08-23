@@ -25,6 +25,7 @@ let audioPlayer = new Audio();      // Create an audio element for the alternate
 
 let lastStep = null;                // Track the last displayed step for updateStepCounter
 let isStopMotionEnabled = false;    // Global flag for stop-motion effect
+let isMoveAnnouncementEnabled = false;  // Global flag for move announcements (disabled by default)
 
 // Define alternate soundtracks
 const altSoundtracksByType = {
@@ -534,10 +535,15 @@ function playVideoRelativeToCurrent(offset) {
         console.info("[Autoplay] Cleared existing loop listener.");
     }
 
-    announceMove(sanitizeMoveName(targetMove.move_name)).then(() => {
-        console.info("[Autoplay] Move announcement finished, now playing video.");
+    if (isMoveAnnouncementEnabled) {
+        announceMove(sanitizeMoveName(targetMove.move_name)).then(() => {
+            console.info("[Autoplay] Move announcement finished, now playing video.");
+            playMoveByIndex(targetMoveIndex);
+        });
+    } else {
+        console.info(`[Navigation] Playing move: "${targetMove.move_name}"`);
         playMoveByIndex(targetMoveIndex);
-    });
+    }
 }
 
 // Apply looping with autoplay support
@@ -720,7 +726,7 @@ export function setupKeyboardControls() {
     }
 
         // Ensure video player has focus for media controls on touch devices
-        if ([' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) {
+        if ([' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'n', 'N'].includes(key)) {
             ensureVideoFocus();
         }
 
@@ -760,16 +766,12 @@ export function setupKeyboardControls() {
                 player.fullscreen.toggle();
                 break;
             case 'N':  // Shift + N for Previous Move
-                if (isLoopEnabled) {
-                    console.info("[Keyboard] Jumping to previous move.");
-                    previousVideo();
-                }
+                console.info("[Keyboard] Jumping to previous move.");
+                previousVideo();
                 break;
             case 'n':  // N for Next Move
-                if (isLoopEnabled) {
-                    console.info("[Keyboard] Jumping to next move.");
-                    nextVideo();
-                }
+                console.info("[Keyboard] Jumping to next move.");
+                nextVideo();
                 break;
         }
     });
