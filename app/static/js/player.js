@@ -27,6 +27,12 @@ let lastStep = null;                // Track the last displayed step for updateS
 let isStopMotionEnabled = false;    // Global flag for stop-motion effect
 let isMoveAnnouncementEnabled = false;  // Global flag for move announcements (disabled by default)
 
+// Auto-mute timeout system for iPad keyboard navigation
+let originalMuteState = false;      // Remember original video mute state before keyboard navigation
+let originalAudioMuteState = false; // Remember original alternate audio mute state
+let keyboardMuteTimer = null;       // Timer for restoring audio after keyboard inactivity
+const KEYBOARD_MUTE_TIMEOUT = 3000; // 3 seconds timeout
+
 // Define alternate soundtracks
 const altSoundtracksByType = {
     "salsa": "salsa_loop.mp3",
@@ -733,6 +739,7 @@ export function setupKeyboardControls() {
         switch (key) {
             case ' ':
             case 'Enter':
+                handleKeyboardMuting();
                 togglePlayPause();
                 break;
             case 'ArrowLeft':
@@ -760,17 +767,39 @@ export function setupKeyboardControls() {
                 player.currentTime = player.duration;
                 break;
             case 'm':
-                player.muted = !player.muted;
+                // Visual feedback to confirm 'm' key detected
+                document.body.style.backgroundColor = 'orange';
+                setTimeout(() => document.body.style.backgroundColor = '', 200);
+                
+                if (isAlternateSoundtrackEnabled) {
+                    // In alternate mode: toggle alternate audio, keep video muted
+                    audioPlayer.muted = !audioPlayer.muted;
+                    player.muted = true;  // Video always muted in this mode
+                    console.info(`[Manual Mute] Alternate audio: ${audioPlayer.muted ? 'muted' : 'unmuted'}`);
+                } else {
+                    // Normal mode: toggle video audio
+                    player.muted = !player.muted;
+                    console.info(`[Manual Mute] Video: ${player.muted ? 'muted' : 'unmuted'}`);
+                }
+                
+                // End keyboard navigation session immediately (user wants control now)
+                if (keyboardMuteTimer) {
+                    clearTimeout(keyboardMuteTimer);
+                    keyboardMuteTimer = null;
+                    console.info(`[Manual Mute] Ended keyboard navigation session`);
+                }
                 break;
             case 'f':
                 player.fullscreen.toggle();
                 break;
             case 'N':  // Shift + N for Previous Move
                 console.info("[Keyboard] Jumping to previous move.");
+                handleKeyboardMuting();
                 previousVideo();
                 break;
             case 'n':  // N for Next Move
                 console.info("[Keyboard] Jumping to next move.");
+                handleKeyboardMuting();
                 nextVideo();
                 break;
         }
@@ -818,6 +847,49 @@ function scrubVideoFast(direction) {
     const seekAmount = direction === "forward" ? .5 : -.5;
     player.currentTime = Math.max(0, player.currentTime + seekAmount);
     logToDebugWindow(`[Media Control] Fast Scrub: ${seekAmount}s`);
+}
+
+function handleKeyboardMuting() {
+    // Auto-mute system for iPad keyboard navigation
+    // Safari blocks keyboard events during unmuted video playback, but allows them when muted.
+    // This function temporarily mutes videos during keyboard navigation, then restores audio
+    // after 3 seconds of inactivity, enabling reliable n/spacebar controls on iPad.
+    if (!keyboardMuteTimer) {
+        // First keypress - save original states and mute both audio sources
+        originalMuteState = player.muted;
+        originalAudioMuteState = audioPlayer.muted;
+        player.muted = true;
+        audioPlayer.muted = true;
+        console.info(`[Keyboard Mute] Auto-muted video: ${originalMuteState}, audio: ${originalAudioMuteState}`);
+        
+        // Visual feedback - bright green for first keypress
+        document.body.style.backgroundColor = 'lightgreen';
+        setTimeout(() => document.body.style.backgroundColor = '', 200);
+    } else {
+        // Subsequent keypress - ensure both stay muted and show timer reset
+        player.muted = true;
+        audioPlayer.muted = true;
+        console.info(`[Keyboard Mute] Timer reset - maintaining silence`);
+        document.body.style.backgroundColor = 'lightblue';
+        setTimeout(() => document.body.style.backgroundColor = '', 150);
+    }
+    
+    // Reset/extend timer for each keypress
+    clearTimeout(keyboardMuteTimer);
+    keyboardMuteTimer = setTimeout(() => {
+        if (isAlternateSoundtrackEnabled) {
+            // In alternate mode: video stays muted, restore alternate audio state
+            player.muted = true;
+            audioPlayer.muted = originalAudioMuteState;
+            console.info(`[Keyboard Mute] Auto-restored alternate audio: ${originalAudioMuteState} (video stays muted)`);
+        } else {
+            // Normal mode: restore video state, alternate audio stays muted
+            player.muted = originalMuteState;
+            audioPlayer.muted = true;
+            console.info(`[Keyboard Mute] Auto-restored video: ${originalMuteState} (alternate audio stays muted)`);
+        }
+        keyboardMuteTimer = null;
+    }, KEYBOARD_MUTE_TIMEOUT);
 }
 
 function scrubVideoSlow(direction) {
@@ -1076,6 +1148,7 @@ function startPlayback(video_filename, start, end, speed, move_name, notes, step
 
         // Alternate Soundtrack Logic (Only Runs if Enabled)
         if (isAlternateSoundtrackEnabled && alt_soundtrack) {
+            // When alternate soundtrack is enabled, ALWAYS mute video (play music instead)
             console.info(`[Alternate Soundtrack] Playing "${alt_soundtrack}". Muting video.`);
             player.muted = true;
 
@@ -1099,9 +1172,17 @@ function startPlayback(video_filename, start, end, speed, move_name, notes, step
             });
 
         } else {
-            console.info('[Alternate Soundtrack] No alternate track, unmuting video.');
-            player.muted = false;
+            console.info('[Alternate Soundtrack] No alternate track.');
             audioPlayer.pause();
+            
+            // Respect keyboard mute state - only unmute if not in keyboard navigation mode
+            if (!keyboardMuteTimer) {
+                console.info('[Alternate Soundtrack] Unmuting video (no keyboard navigation active).');
+                player.muted = false;
+            } else {
+                console.info('[Alternate Soundtrack] Keeping video muted (keyboard navigation active).');
+                player.muted = true;
+            }
         }
     }).catch(error => {
         console.error('[Start Playback] Seek failed:', error);
